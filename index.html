@@ -1,0 +1,2369 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vive Lastarria</title>
+<meta name="description" content="Espacio vecinal del Barrio Lastarria: avisos, casos y reportes ordenados para quienes viven y trabajan en el barrio. Versión de demostración.">
+<meta name="theme-color" content="#FF5E4D">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta property="og:title" content="Vive Lastarria">
+<meta property="og:description" content="Avisos, casos y gestiones del barrio en un solo lugar. Prototipo del equipo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23FF5E4D'/%3E%3Cpath d='M10 12h12l10 28 10-28h12L38 54H26z' fill='%230B0B0B'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Concepto: bajar el volumen. Interfaz quieta y ordenada, con tipografia de cartel de calle
+   solo en los titulares. Navegacion por pestanas; la presentacion del caso es un visor oscuro
+   dentro del mismo prototipo. */
+:root {
+  --bg: #F0F2EE;
+  --surface: #FAFBF8;
+  --ink: #14201C;
+  --ink-2: #4B5B55;
+  --line: #D3D9D2;
+  --accent: #5A3E9B;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E7E1F4;
+  --st-open: #B23A28;
+  --st-prog: #9A5E00;
+  --st-done: #2A7A4B;
+  --stage-bg: #14201C;
+  --stage-fg: #F0F2EE;
+  --stage-mute: #A8B6B0;
+  --stage-accent: #BBA9F4;
+  --stage-line: #2E3C37;
+  --font-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111715; --surface: #19211D; --ink: #E7EEEA; --ink-2: #A2B1AB; --line: #2B3731;
+    --accent: #BBA9F4; --accent-ink: #1A1233; --accent-soft: #2B2548;
+    --st-open: #FF8F7A; --st-prog: #F2B84B; --st-done: #73D79F;
+    --stage-bg: #0A0F0D; --stage-fg: #E7EEEA; --stage-mute: #A2B1AB; --stage-accent: #BBA9F4; --stage-line: #26322D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111715; --surface: #19211D; --ink: #E7EEEA; --ink-2: #A2B1AB; --line: #2B3731;
+  --accent: #BBA9F4; --accent-ink: #1A1233; --accent-soft: #2B2548;
+  --st-open: #FF8F7A; --st-prog: #F2B84B; --st-done: #73D79F;
+  --stage-bg: #0A0F0D; --stage-fg: #E7EEEA; --stage-mute: #A2B1AB; --stage-accent: #BBA9F4; --stage-line: #26322D;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  background: var(--bg); z-index: 40;
+}
+h1, h2, h3, h4, p { margin: 0; }
+button { font: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  width: 100%; max-width: 1160px; margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.ic {
+  width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.skip {
+  position: absolute; left: -999px; top: 0; z-index: 60; background: var(--accent);
+  color: var(--accent-ink); padding: .5rem 1rem;
+}
+.skip:focus { left: 8px; top: 8px; }
+
+/* Aviso de demostracion */
+.demo { background: var(--ink); color: var(--bg); font-size: .88rem; }
+.demo .wrap { padding-block: .5rem; }
+
+/* Encabezado fijo con pestanas */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.top .wrap {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .15rem 1.5rem; padding-block: .55rem;
+}
+.brand {
+  font-family: var(--font-display); font-weight: 850; font-stretch: 68%;
+  font-size: 1.45rem; line-height: 1; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--ink); text-decoration: none;
+}
+.tabwrap { min-width: 0; max-width: 100%; }
+.tabs {
+  display: flex; align-items: center; gap: 2px; overflow-x: auto; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: none; white-space: nowrap; padding: .5rem .75rem; border: 0; border-radius: 4px;
+  background: transparent; color: var(--ink-2); font-weight: 700; font-size: .95rem; cursor: pointer;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+.tab.go { color: var(--accent); }
+.tab.go[aria-selected="true"] { color: var(--accent); }
+.tab.alt { border: 1px dashed var(--ink-2); margin-left: 10px; }
+@media (max-width: 700px) { .tabwrap { flex-basis: 100%; } }
+
+/* Vistas */
+.view { padding-block: clamp(2rem, 5vw, 3.5rem); }
+.view:focus { outline: none; }
+.view.home { padding-block: 0; }
+
+/* Inicio */
+.hero { padding-block: clamp(2rem, 6vw, 4.5rem) clamp(2rem, 5vw, 3.5rem); }
+.eyebrow {
+  display: flex; align-items: center; gap: .6rem; font-size: .8rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2);
+}
+.eyebrow::before { content: ""; width: .7rem; height: .7rem; background: var(--accent); }
+h1 {
+  font-family: var(--font-display); font-weight: 850; font-stretch: 62%;
+  font-size: clamp(3.2rem, 17vw, 12rem); line-height: .86; letter-spacing: -.005em; overflow-wrap: anywhere;
+  text-transform: uppercase; margin-block: .5rem 1.25rem;
+}
+h1 span { color: var(--accent); }
+.lede { max-width: 36rem; font-size: 1.25rem; line-height: 1.45; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.25rem; }
+
+.wave { margin-top: 2rem; }
+.wave svg { display: block; width: 100%; height: 84px; overflow: visible; }
+.wave .base { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.wave path {
+  fill: none; stroke: var(--accent); stroke-width: 2.2;
+  vector-effect: non-scaling-stroke; stroke-linejoin: round;
+}
+.wave .cap {
+  display: flex; justify-content: space-between; gap: 1rem; margin-top: .4rem;
+  font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2);
+}
+
+.axes-title { margin-top: 2.25rem; font-weight: 700; color: var(--ink-2); font-size: .95rem; }
+.axes {
+  display: grid; gap: 12px; margin-top: .6rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+}
+.axis {
+  color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; padding: 1rem 1.1rem; cursor: pointer; text-align: left;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: .85rem; row-gap: .15rem;
+  align-items: start;
+}
+.axis:hover { border-color: var(--accent); }
+.axis .ic { grid-column: 1; grid-row: 1 / span 3; width: 1.9rem; height: 1.9rem; color: var(--accent); }
+.axis .t {
+  grid-column: 2; font-family: var(--font-display); font-stretch: 78%; font-weight: 750;
+  font-size: 1.4rem; line-height: 1.1;
+}
+.axis .d { grid-column: 2; color: var(--ink-2); font-size: .95rem; }
+.axis .n { grid-column: 2; margin-top: .25rem; font-weight: 700; font-size: .9rem; color: var(--accent); }
+
+.latest { border-top: 1px solid var(--line); padding-block: clamp(2rem, 5vw, 3rem); }
+.latest-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .4rem 1rem; margin-bottom: 1rem; }
+.h-sm { font-family: var(--font-display); font-stretch: 65%; font-weight: 850; font-size: 2rem; line-height: 1; text-transform: uppercase; }
+.link {
+  background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); font-weight: 700;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* Cabeceras de seccion */
+.sec-head { display: grid; gap: .6rem 2rem; grid-template-columns: minmax(0, 1fr); margin-bottom: 1.75rem; }
+.sec-head h2 {
+  font-family: var(--font-display); font-weight: 850; font-stretch: 65%;
+  font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: .95; text-transform: uppercase; text-wrap: balance;
+}
+.sec-head p { color: var(--ink-2); max-width: 34rem; }
+@media (min-width: 800px) {
+  .sec-head { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: end; }
+}
+.split { display: grid; gap: 2rem; grid-template-columns: minmax(0, 1fr); }
+.split > aside { order: -1; }
+@media (min-width: 900px) {
+  .split { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: 3rem; }
+  .split > aside { order: 0; }
+}
+
+/* Filtros */
+.filters { display: flex; flex-wrap: wrap; gap: .9rem 2.25rem; margin-bottom: 1.25rem; }
+.fgroup { display: grid; gap: .4rem; min-width: 0; }
+.flabel { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  color: var(--ink); background: transparent; border: 1px solid var(--line);
+  padding: .4rem .85rem; border-radius: 999px; cursor: pointer;
+}
+.chip:hover { border-color: var(--ink-2); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Novedades */
+.feed { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.feed li {
+  display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: 1rem;
+  padding-block: 1.15rem; border-bottom: 1px solid var(--line);
+}
+.feed .empty { display: block; color: var(--ink-2); }
+.date { font-family: var(--font-display); font-stretch: 70%; font-weight: 800; line-height: 1; }
+.date .day { display: block; font-size: 2.5rem; }
+.date .mon {
+  display: block; margin-top: .2rem; font-family: var(--font-body); font-stretch: 100%;
+  font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2);
+}
+.tag {
+  display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+}
+.feed h3 {
+  font-family: var(--font-display); font-stretch: 80%; font-weight: 750;
+  font-size: 1.4rem; line-height: 1.1; margin-block: .3rem .35rem;
+}
+.feed p { color: var(--ink-2); max-width: 60ch; }
+
+.next {
+  background: var(--accent-soft); border: 1px solid var(--line); border-radius: 4px;
+  padding: 1.25rem;
+}
+@media (max-width: 899px) { .next { position: static; } }
+.next .lab { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.next .head { display: flex; gap: 1rem; align-items: center; margin-block: .8rem; }
+.next .tile {
+  display: grid; justify-items: center; flex: none; min-width: 4rem;
+  background: var(--accent); color: var(--accent-ink); border-radius: 4px; padding: .55rem .7rem;
+  font-family: var(--font-display); font-stretch: 70%; font-weight: 800; line-height: 1;
+}
+.next .tile b { font-size: 2.4rem; font-weight: 800; }
+.next .tile i {
+  font-style: normal; font-family: var(--font-body); font-stretch: 100%; font-size: .78rem;
+  letter-spacing: .12em; text-transform: uppercase; margin-top: .2rem;
+}
+.next h3 { font-family: var(--font-display); font-stretch: 80%; font-weight: 750; font-size: 1.35rem; line-height: 1.1; }
+.next .when { font-weight: 700; margin-top: .6rem; }
+.next .where, .next .what { color: var(--ink-2); font-size: .95rem; }
+.next .what { margin-top: .6rem; }
+
+/* Casos */
+.cases { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.cases .empty { grid-column: 1 / -1; color: var(--ink-2); }
+.case {
+  display: flex; flex-direction: column; gap: .7rem; min-width: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1.25rem;
+}
+.case .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem; }
+.pill {
+  display: inline-flex; align-items: center; gap: .4rem; font-size: .76rem; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; padding: .22rem .55rem; border-radius: 3px;
+  color: var(--st); background: color-mix(in srgb, var(--st) 14%, transparent);
+}
+.pill::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--st); }
+.case .cat { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; color: var(--ink-2); }
+.case h3 {
+  font-family: var(--font-display); font-stretch: 78%; font-weight: 750;
+  font-size: 1.6rem; line-height: 1.05; text-wrap: balance;
+}
+.case .where { display: flex; align-items: center; gap: .4rem; color: var(--ink-2); font-size: .95rem; }
+.case .sum { max-width: 60ch; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; list-style: none; margin: .2rem 0 0; padding: 0; }
+.steps li { position: relative; padding-top: .55rem; font-size: .8rem; color: var(--ink-2); }
+.steps li::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; border-radius: 2px; background: var(--line);
+}
+.steps li.on::before { background: var(--st); }
+.steps li[aria-current] { color: var(--ink); font-weight: 700; }
+.case .meta { font-size: .88rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.case summary { cursor: pointer; font-weight: 700; color: var(--accent); }
+.log { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.log li { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: .5rem; font-size: .95rem; }
+.log time { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* Guia */
+.acc { border-top: 1px solid var(--line); }
+.acc:last-of-type { border-bottom: 1px solid var(--line); }
+.acc summary {
+  display: flex; align-items: center; gap: .75rem; padding-block: 1rem; cursor: pointer;
+  list-style: none; font-family: var(--font-display); font-stretch: 80%; font-weight: 750; font-size: 1.4rem; line-height: 1.1;
+}
+.acc summary::-webkit-details-marker { display: none; }
+.acc summary .ic { color: var(--accent); width: 1.5rem; height: 1.5rem; }
+.acc summary::after { content: "+"; margin-left: auto; font-family: var(--font-body); font-weight: 400; font-size: 1.6rem; color: var(--ink-2); }
+.acc[open] summary::after { content: "\2212"; }
+.acc ol { margin: 0 0 1.25rem; padding-left: 1.5rem; display: grid; gap: .55rem; max-width: 60ch; }
+.acc ol li::marker { color: var(--accent); font-weight: 700; }
+.note { margin-top: 1rem; color: var(--ink-2); font-size: .9rem; font-style: italic; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1.25rem; }
+.panel + .panel { margin-top: 16px; }
+.panel h3 { font-family: var(--font-display); font-stretch: 80%; font-weight: 750; font-size: 1.35rem; line-height: 1.1; margin-bottom: .7rem; }
+.panel ul { margin: 0; padding-left: 1.2rem; display: grid; gap: .45rem; }
+.panel li::marker { color: var(--accent); }
+.panel.soft { background: var(--accent-soft); }
+
+/* Reportar */
+.report { display: grid; gap: 2rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .report { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; } }
+.field { display: grid; gap: .35rem; margin: 0 0 1rem; }
+fieldset.field { border: 0; padding: 0; min-width: 0; }
+.field label, .field legend { font-weight: 700; font-size: .92rem; padding: 0; }
+.field input[type="text"], .field input[type="datetime-local"], .field input[type="number"], .field select, .field textarea, .preview {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 4px; padding: .6rem .75rem; width: 100%; min-width: 0;
+}
+.field textarea, .preview { resize: vertical; line-height: 1.5; }
+.checks { display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; }
+.checks label { display: inline-flex; align-items: center; gap: .45rem; font-weight: 400; }
+.checks input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
+.preview-box .flabel { display: block; margin-bottom: .4rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: .9rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; border-radius: 4px;
+  padding: .65rem 1.1rem; cursor: pointer; text-decoration: none; border: 1px solid var(--accent);
+}
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--accent); }
+.status { margin-top: .7rem; min-height: 1.5em; font-size: .92rem; color: var(--ink-2); }
+
+/* Comision */
+.trio { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); }
+.trio .panel { display: flex; flex-direction: column; gap: .6rem; }
+.trio .panel .ic { width: 1.9rem; height: 1.9rem; color: var(--accent); }
+.trio .badge {
+  align-self: flex-start; margin-top: auto; font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-2); border: 1px dashed var(--ink-2); border-radius: 3px; padding: .2rem .5rem;
+}
+.trio .badge.here { color: var(--accent); border: 1px solid var(--accent); }
+.roles-title { font-family: var(--font-display); font-stretch: 80%; font-weight: 750; font-size: 1.6rem; margin-block: 2.5rem .8rem; }
+.roles { border-top: 1px solid var(--line); }
+.role { display: grid; gap: .5rem 1.5rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-block: .9rem; border-bottom: 1px solid var(--line); }
+.role .q { color: var(--ink-2); }
+.role .a { font-weight: 700; }
+@media (max-width: 560px) { .role { grid-template-columns: minmax(0, 1fr); gap: .1rem; } }
+
+/* Presentacion del caso */
+.deck {
+  background: var(--stage-bg); color: var(--stage-fg); border-radius: 6px; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.stage { position: relative; display: grid; padding: clamp(1.5rem, 4vw, 3.5rem); min-height: 26rem; }
+@media (min-width: 900px) { .stage { aspect-ratio: 16 / 9; min-height: auto; } }
+.slide { grid-area: 1 / 1; align-self: center; display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.slide:not(.on) { visibility: hidden; opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) { .slide { transition: opacity .25s ease; } }
+.s-eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--stage-accent); }
+.s-title {
+  font-family: var(--font-display); font-weight: 850; font-stretch: 62%; text-transform: uppercase;
+  line-height: .92; font-size: clamp(2.4rem, 7vw, 5.2rem); text-wrap: balance;
+}
+.s-title.big { font-size: clamp(3.4rem, 13vw, 9rem); }
+.s-title .a { color: var(--stage-accent); }
+.s-text { font-size: clamp(1.05rem, 2vw, 1.45rem); line-height: 1.4; max-width: 34em; }
+.s-mute { color: var(--stage-mute); }
+.s-cols { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.s-col { border-top: 2px solid var(--stage-accent); padding-top: .8rem; min-width: 0; }
+.s-col h4 { font-family: var(--font-display); font-stretch: 78%; font-weight: 750; font-size: 1.5rem; line-height: 1.1; margin-bottom: .35rem; }
+.s-col p { color: var(--stage-mute); font-size: 1rem; }
+.s-col .ic { width: 1.6rem; height: 1.6rem; color: var(--stage-accent); margin-bottom: .4rem; display: block; }
+button.s-col {
+  background: transparent; border-left: 0; border-right: 0; border-bottom: 0; color: var(--stage-fg);
+  text-align: left; cursor: pointer; padding-inline: 0;
+}
+button.s-col:hover h4 { color: var(--stage-accent); }
+.s-col .go { display: block; margin-top: .5rem; font-size: .88rem; font-weight: 700; color: var(--stage-accent); }
+.swave { display: block; width: 100%; height: 64px; overflow: visible; margin-top: .5rem; }
+.swave line { stroke: var(--stage-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.swave path { fill: none; stroke: var(--stage-accent); stroke-width: 2.2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+
+.s-two { display: grid; gap: 1.5rem 2.5rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .s-two { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+.s-two .s-eyebrow { margin-bottom: .5rem; }
+.s-lead { font-family: var(--font-display); font-stretch: 78%; font-weight: 700; font-size: clamp(1.4rem, 3vw, 2.1rem); line-height: 1.15; }
+.s-ol { margin: 0; padding-left: 1.4rem; display: grid; gap: .6rem; font-size: clamp(1rem, 1.7vw, 1.2rem); }
+.s-ol li::marker { color: var(--stage-accent); font-weight: 700; }
+.s-steps {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem; counter-reset: st;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+.s-steps li { border-top: 2px solid var(--stage-accent); padding-top: .8rem; counter-increment: st; min-width: 0; }
+.s-steps li::before {
+  content: counter(st); display: block; font-family: var(--font-display); font-stretch: 70%; font-weight: 850;
+  font-size: 2.4rem; line-height: 1; color: var(--stage-accent); margin-bottom: .3rem;
+}
+.s-steps h4 { font-family: var(--font-display); font-stretch: 78%; font-weight: 750; font-size: 1.4rem; line-height: 1.1; margin-bottom: .3rem; }
+.s-steps p { color: var(--stage-mute); font-size: 1rem; }
+.s-rows { border-top: 1px solid var(--stage-line); }
+.s-row { display: grid; gap: .2rem 1.5rem; grid-template-columns: minmax(0, 1fr); padding-block: .7rem; border-bottom: 1px solid var(--stage-line); }
+@media (min-width: 700px) { .s-row { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); } }
+.s-row span { color: var(--stage-mute); }
+.s-todo {
+  align-self: flex-start; border: 1px dashed var(--stage-mute); border-radius: 3px;
+  padding: .35rem .7rem; color: var(--stage-mute); font-size: .92rem;
+}
+.s-title.sm { font-size: clamp(1.7rem, 3.6vw, 2.8rem); line-height: .95; }
+.cmap { display: grid; gap: 1.5rem 3rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .cmap { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); } }
+.cchain { list-style: none; margin: 0; padding: 0; }
+.cn {
+  position: relative; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .75rem; align-items: center;
+  border: 1px solid var(--stage-line); border-radius: 4px; padding: .5rem .8rem; margin-bottom: 1.55rem;
+  font-size: clamp(.92rem, 1.5vw, 1.1rem); line-height: 1.3;
+}
+.cn:last-child { margin-bottom: 0; }
+.cn b { font-family: var(--font-display); font-stretch: 70%; font-weight: 850; font-size: 1.5rem; line-height: 1; color: var(--stage-accent); }
+.cn.key { border-color: var(--stage-accent); background: color-mix(in srgb, var(--stage-accent) 14%, transparent); }
+.cl {
+  position: absolute; left: 1.4rem; top: 100%; height: 1.55rem; display: flex; align-items: center;
+  padding-left: .8rem; border-left: 2px solid var(--stage-accent); font-size: .8rem; color: var(--stage-mute);
+}
+.cl::after {
+  content: ""; position: absolute; left: -5px; bottom: 0; border-style: solid; border-width: 6px 4px 0;
+  border-color: var(--stage-accent) transparent transparent;
+}
+.cside { display: grid; gap: .9rem; align-content: start; min-width: 0; }
+.ckey { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.ckey li {
+  display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: .5rem; align-items: baseline;
+  border-top: 1px solid var(--stage-line); padding-top: .5rem; font-size: clamp(.92rem, 1.5vw, 1.05rem);
+}
+.ckey b { font-family: var(--font-display); font-stretch: 70%; font-weight: 850; font-size: 1.3rem; line-height: 1.1; color: var(--stage-accent); }
+.rmap { display: grid; gap: 14px 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .rmap { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) and (max-width: 1199px) { .rc.wide { grid-column: 1 / -1; } }
+@media (min-width: 1200px) { .rmap { grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); } }
+.rc { min-width: 0; border-top: 2px solid var(--stage-accent); padding-top: .6rem; display: grid; gap: .6rem; align-content: start; }
+.rc header { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 .6rem; align-items: baseline; }
+.rc .rb { grid-row: span 2; font-family: var(--font-display); font-stretch: 70%; font-weight: 850; font-size: 1.5rem; line-height: 1; color: var(--stage-accent); }
+.rc h4 { font-family: var(--font-display); font-stretch: 78%; font-weight: 750; font-size: 1.15rem; line-height: 1.1; }
+.rc header p { color: var(--stage-mute); font-size: .8rem; }
+.rcards { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.rc.wide .rcards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.rcard { border: 1px solid var(--stage-line); border-radius: 4px; padding: .5rem .65rem; min-width: 0; }
+.rcard h5 { margin: 0 0 .15rem; font-size: .9rem; font-weight: 700; line-height: 1.2; }
+.rcard h5 i { font-style: normal; font-weight: 400; color: var(--stage-mute); }
+.rcard p { color: var(--stage-mute); font-size: .82rem; line-height: 1.35; }
+.rkey {
+  display: flex; flex-wrap: wrap; gap: .3rem 1rem; align-items: baseline; border-top: 1px solid var(--stage-line);
+  padding-top: .7rem; font-size: clamp(.92rem, 1.4vw, 1.05rem);
+}
+.rkey b { color: var(--stage-accent); }
+@media (max-width: 899px) { .slide:not(.on) { display: none; } }
+/* Panorama del barrio */
+.pano {
+  display: grid; gap: 1.25rem 2.5rem; grid-template-columns: minmax(0, 1fr);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 4px;
+  padding: 1.1rem 1.25rem; margin-bottom: 1.5rem;
+}
+@media (min-width: 900px) { .pano { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+.pano-nums { display: grid; grid-template-columns: repeat(3, auto); gap: .75rem 2rem; justify-content: start; }
+.pano-nums div { display: grid; }
+.pano-nums b {
+  font-family: var(--font-display); font-stretch: 70%; font-weight: 850; font-size: 2.4rem; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.pano-nums span { color: var(--ink-2); font-size: .9rem; }
+.bars { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.bars li { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) 1.6rem; gap: .6rem; align-items: center; font-size: .92rem; }
+.bars .lab { overflow-wrap: anywhere; line-height: 1.25; }
+.bars .track { height: .55rem; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bars .fill { display: block; height: 100%; background: var(--accent); }
+.bars .val { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hint { color: var(--ink-2); font-size: .88rem; }
+.filters + .hint { margin: -.4rem 0 1.25rem; }
+
+/* Acciones en cada caso */
+.case-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn-sm {
+  font-size: .88rem; font-weight: 700; padding: .4rem .8rem; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--accent); background: transparent; color: var(--accent);
+}
+.btn-sm:hover { background: var(--accent-soft); }
+.btn-sm[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* Tus calles (Inicio) */
+.mycalles { margin-top: 2rem; }
+.mycalles:empty { margin-top: 0; }
+.mycalles-grid { display: grid; gap: 12px; margin-top: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.mycall {
+  display: grid; gap: .15rem; text-align: left; cursor: pointer; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: .8rem 1rem;
+}
+.mycall:hover { border-color: var(--accent); }
+.mycall .t { font-family: var(--font-display); font-stretch: 78%; font-weight: 750; font-size: 1.3rem; line-height: 1.1; }
+.mycall span { color: var(--ink-2); font-size: .92rem; }
+.mycall .t { color: var(--ink); }
+.mycall .u { font-size: .85rem; }
+
+/* Agenda de la reunion */
+.agenda-lab { margin-top: 1rem; font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
+.agenda { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.agenda li { display: grid; }
+.agenda .link { text-align: left; justify-self: start; }
+.agenda span { color: var(--ink-2); font-size: .88rem; }
+.summary { margin-top: 16px; }
+.summary .preview { margin-top: .6rem; }
+
+/* Reporte guiado */
+.timer {
+  background: var(--accent-soft); border: 1px solid var(--line); border-radius: 4px;
+  padding: 1rem; margin: 0 0 1rem; display: grid; gap: .5rem;
+}
+.timer-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.t-out { font-family: var(--font-display); font-stretch: 70%; font-weight: 800; font-size: 2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.timer .actions { margin-top: .2rem; }
+.timer .status { margin-top: 0; min-height: 0; }
+.nudge {
+  border-left: 3px solid var(--st-prog); background: color-mix(in srgb, var(--st-prog) 12%, transparent);
+  padding: .5rem .75rem; font-size: .92rem; border-radius: 0 4px 4px 0;
+}
+.caso-banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; background: var(--accent-soft);
+  border: 1px solid var(--line); border-radius: 4px; padding: .6rem .9rem; margin-bottom: 1.5rem;
+}
+.route { margin-top: 1.5rem; }
+.route-list { list-style: none; margin: 0 0 .9rem; padding: 0; display: grid; gap: .6rem; }
+.route-list li { display: grid; gap: .1rem; border-top: 1px solid var(--line); padding-top: .6rem; }
+.route-list b { font-weight: 700; }
+.route-list span { color: var(--ink-2); font-size: .92rem; }
+.route .hint { color: var(--ink); }
+.panel ol { margin: 0; padding-left: 1.2rem; display: grid; gap: .45rem; }
+.panel ol li::marker { color: var(--accent); font-weight: 700; }
+.panel.route .route-list { list-style: none; margin: 0 0 .9rem; padding: 0; gap: .6rem; }
+.panel.route .route-list li::marker { content: ""; }
+[hidden] { display: none !important; }
+.trio .panel + .panel, .duo .panel + .panel { margin-top: 0; }
+.duo { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); }
+.duo .panel { display: grid; gap: .5rem; align-content: start; }
+.duo .panel h3 { margin-bottom: 0; }
+
+/* Lamina: que tomamos de cada referente */
+.tk .s-row { padding-block: .5rem; font-size: .95rem; }
+@media (min-width: 700px) { .tk .s-row { grid-template-columns: minmax(0, 3fr) minmax(0, 7fr) auto; align-items: center; } }
+.tk .s-row b { font-weight: 700; }
+.s-go {
+  background: transparent; border: 1px solid var(--stage-line); color: var(--stage-accent); border-radius: 4px;
+  padding: .3rem .7rem; cursor: pointer; font-weight: 700; font-size: .85rem; white-space: nowrap; justify-self: start;
+}
+.s-go:hover { border-color: var(--stage-accent); }
+.s-go:focus-visible { outline-color: var(--stage-accent); }
+.phases {
+  display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: .7rem 1rem;
+  border-bottom: 1px solid var(--stage-line);
+}
+.phase {
+  display: inline-flex; align-items: center; gap: .5rem; background: transparent; color: var(--stage-mute);
+  border: 1px solid var(--stage-line); border-radius: 999px; padding: .3rem .85rem; cursor: pointer;
+  font-size: .9rem; font-weight: 700;
+}
+.phase b { font-family: var(--font-display); font-stretch: 70%; font-weight: 800; font-size: 1.05rem; }
+.phase:hover { border-color: var(--stage-accent); }
+.phase.done { color: var(--stage-fg); }
+.phase[aria-current="true"] { background: var(--stage-accent); color: var(--stage-bg); border-color: var(--stage-accent); }
+.phase:focus-visible { outline-color: var(--stage-accent); }
+.deckbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .6rem .75rem; padding: .7rem 1rem;
+  padding-bottom: max(.7rem, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--stage-line);
+}
+.dbtn {
+  background: transparent; color: var(--stage-fg); border: 1px solid var(--stage-line);
+  border-radius: 4px; padding: .45rem .85rem; cursor: pointer; font-weight: 700;
+}
+.dbtn:hover:not(:disabled) { border-color: var(--stage-accent); }
+.dbtn:disabled { opacity: .4; cursor: default; }
+.dbtn:focus-visible, .dot:focus-visible, button.s-col:focus-visible { outline-color: var(--stage-accent); }
+.dots { display: flex; flex-wrap: wrap; margin-inline: auto; }
+.dot {
+  width: 24px; height: 24px; padding: 6px; border: 0; background: var(--stage-line);
+  background-clip: content-box; border-radius: 50%; cursor: pointer;
+}
+.dot[aria-current="true"] { background: var(--stage-accent); background-clip: content-box; }
+.count { font-variant-numeric: tabular-nums; color: var(--stage-mute); font-size: .9rem; }
+.deck:fullscreen { border-radius: 0; }
+.deck:fullscreen .stage { flex: 1; aspect-ratio: auto; }
+
+.foot { border-top: 1px solid var(--line); padding-block: 2rem; color: var(--ink-2); font-size: .9rem; }
+.foot .brand { color: var(--ink); font-size: 1.15rem; margin-right: .5rem; }
+
+/* ===== Capa visual v8: neobrutalista (referencia: iteracion del equipo) =====
+   Fondo de color distinto por pestana, tinta negra, bordes de 2px, sombra dura sin desenfoque,
+   cinta de texto y etiquetas negras. Texto siempre negro sobre color (contraste >= 6:1). */
+:root[data-view="inicio"]     { --view-bg: #FF5E4D; }
+:root[data-view="novedades"]  { --view-bg: #B39CFF; }
+:root[data-view="casos"]      { --view-bg: #FF5FA8; }
+:root[data-view="guia"]       { --view-bg: #3BEBC7; }
+:root[data-view="reportar"]   { --view-bg: #FF9A3C; }
+:root[data-view="comision"]   { --view-bg: #B6F24A; }
+:root[data-view="presentacion"] { --view-bg: #4DB8FF; }
+:root:root:root {
+  color-scheme: light;
+  --bg: var(--view-bg, #FF5E4D); --surface: #FFFFFF; --ink: #0B0B0B; --ink-2: #1F1F1F; --line: #0B0B0B;
+  --accent: #0B0B0B; --accent-ink: #FFFFFF; --accent-soft: #FFE45E;
+  --st-open: #C2260F; --st-prog: #8A5300; --st-done: #1E6B3F;
+  --stage-bg: #0B0B0B; --stage-fg: #FFFFFF; --stage-mute: #C9C9C9; --stage-accent: #FFE45E; --stage-line: #3A3A3A;
+  --hard: 5px 5px 0 #0B0B0B;
+}
+:focus-visible { outline: 3px solid #0B0B0B; outline-offset: 3px; }
+.demo { background: #0B0B0B; color: #FFFFFF; }
+.top { border-bottom: 2px solid #0B0B0B; }
+.brand { font-size: 1.6rem; }
+.tab { border-radius: 999px; color: #0B0B0B; box-shadow: none; }
+.tab:hover { background: rgba(255,255,255,.45); }
+.tab[aria-selected="true"], .tab.go[aria-selected="true"] { background: #0B0B0B; color: #FFFFFF; box-shadow: none; }
+.tab.go { color: #0B0B0B; }
+.tab.alt { border: 2px solid #0B0B0B; }
+.tab.alt[aria-selected="true"] { border-color: #0B0B0B; }
+
+.ticker { background: #0B0B0B; color: #FFFFFF; overflow: hidden; border-bottom: 2px solid #0B0B0B; }
+.ticker-track { display: flex; width: max-content; }
+.ticker-track span {
+  flex: none; padding: .55rem 1.2rem; white-space: nowrap; font-family: var(--font-display); font-stretch: 70%;
+  font-weight: 850; font-size: 1.3rem; letter-spacing: .02em; text-transform: uppercase;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ticker-track { animation: tick 28s linear infinite; }
+  @keyframes tick { to { transform: translateX(-50%); } }
+}
+
+.eyebrow::before { background: #0B0B0B; }
+h1 { color: #0B0B0B; }
+h1 span { color: #FFFFFF; -webkit-text-stroke: 3px #0B0B0B; paint-order: stroke fill; text-shadow: 6px 6px 0 #0B0B0B; }
+.lede { font-weight: 700; }
+.sec-head h2 { text-shadow: none; }
+.sec-head p { color: #0B0B0B; font-weight: 700; }
+
+.axis, .case, .panel, .pano, .mycall, .caso-banner, .timer, .next, .rcard {
+  border: 2px solid #0B0B0B; border-radius: 0; background: #FFFFFF; box-shadow: var(--hard);
+}
+.next, .timer, .caso-banner, .panel.soft { background: var(--accent-soft); }
+.axis:hover, .mycall:hover { border-color: #0B0B0B; transform: translate(-2px, -2px); box-shadow: 7px 7px 0 #0B0B0B; }
+@media (prefers-reduced-motion: no-preference) { .axis, .mycall { transition: transform .12s ease, box-shadow .12s ease; } }
+.axis .ic, .trio .panel .ic { color: #0B0B0B; }
+.rcard { box-shadow: none; }
+
+.btn { border: 2px solid #0B0B0B; border-radius: 0; box-shadow: 3px 3px 0 #0B0B0B; }
+.btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #0B0B0B; }
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #0B0B0B; }
+.btn.primary { background: #0B0B0B; color: #FFFFFF; }
+.btn.ghost { background: #FFFFFF; color: #0B0B0B; }
+.btn-sm { border: 2px solid #0B0B0B; border-radius: 0; background: #FFFFFF; color: #0B0B0B; }
+.btn-sm:hover { background: var(--accent-soft); }
+.btn-sm[aria-pressed="true"] { background: #0B0B0B; color: #FFFFFF; }
+.chip { border: 2px solid #0B0B0B; background: #FFFFFF; }
+.chip:hover { border-color: #0B0B0B; background: var(--accent-soft); }
+.chip[aria-pressed="true"] { background: #0B0B0B; color: #FFFFFF; }
+.field input[type="text"], .field input[type="datetime-local"], .field input[type="number"], .field select, .field textarea, .preview {
+  border: 2px solid #0B0B0B; border-radius: 0; background: #FFFFFF;
+}
+.flabel, .agenda-lab, .next .lab { color: #0B0B0B; }
+.checks input { accent-color: #0B0B0B; }
+
+.tag, .pill {
+  border-radius: 0; padding: .2rem .55rem; border: 2px solid #0B0B0B; background: #0B0B0B; color: #FFFFFF;
+}
+.pill { background: #FFFFFF; color: var(--st); }
+.pill::before { background: var(--st); }
+.case .cat, .case .where, .case .meta, .log time, .hint, .note, .pano-nums span, .next .where, .next .what, .feed p, .route-list span, .agenda span {
+  color: #1F1F1F;
+}
+.link, .case summary { color: #0B0B0B; }
+.steps li::before { background: rgba(11,11,11,.2); }
+.steps li.on::before { background: var(--st); }
+.bars .track { background: #FFFFFF; border: 2px solid #0B0B0B; border-radius: 0; height: .8rem; }
+.bars .fill { background: #0B0B0B; }
+.wave .base { stroke: #0B0B0B; }
+.wave path { stroke: #0B0B0B; stroke-width: 3; }
+.wave .cap { color: #0B0B0B; }
+.axes-title { color: #0B0B0B; }
+
+.feed, .acc, .roles { border-top: 2px solid #0B0B0B; }
+.feed li, .role { border-bottom: 2px solid #0B0B0B; }
+.acc:last-of-type { border-bottom: 2px solid #0B0B0B; }
+.acc summary .ic, .acc summary::after { color: #0B0B0B; }
+.acc ol li::marker, .panel li::marker, .panel ol li::marker { color: #0B0B0B; }
+.role .q { color: #1F1F1F; }
+.route-list li { border-top: 2px solid #0B0B0B; }
+.latest { border-top: 2px solid #0B0B0B; }
+.trio .badge { color: #0B0B0B; border: 2px dashed #0B0B0B; border-radius: 0; background: #FFFFFF; }
+.trio .badge.here { border: 2px solid #0B0B0B; background: var(--accent-soft); }
+.nudge { border-left: 4px solid #0B0B0B; background: #FFE45E; border-radius: 0; }
+
+.deck { border: 2px solid #0B0B0B; border-radius: 0; box-shadow: var(--hard); }
+.dbtn, .s-go, .phase { border-radius: 0; }
+.phase { border-radius: 999px; }
+.s-title .a { color: var(--stage-accent); }
+
+.foot { background: #0B0B0B; color: #FFFFFF; border-top: 2px solid #0B0B0B; }
+.foot .brand { color: #FFFFFF; }
+/* ===== v9: movil, jerarquia, desplegables y animacion ===== */
+:root { --bnav-h: 66px; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 76px); }
+:root:root:root { --yellow: #FFE45E; }
+
+/* Tamanos tactiles (>= 44 px) y texto minimo (>= 13 px) */
+.chip, .btn-sm, .s-go, .phase, .dbtn { min-height: 44px; }
+.link { display: inline-block; padding-block: .6rem; }
+.checks label { min-height: 44px; }
+.checks input { width: 1.4rem; height: 1.4rem; }
+.flabel, .tag, .pill, .eyebrow, .agenda-lab, .next .lab, .s-eyebrow, .wave .cap { font-size: .8125rem; }
+.hint, .case .meta, .agenda span, .route-list span, .pano-nums span, .steps li, .rc header p, .cl, .rcard p, .s-go { font-size: .875rem; }
+.rcard h5 { font-size: .9375rem; }
+.case details > summary { display: flex; align-items: center; min-height: 44px; }
+
+/* Desplegables */
+details.fold > summary, details.fold-lite > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  min-height: 48px; font-weight: 800; font-size: 1.0625rem;
+}
+details.fold > summary::-webkit-details-marker, details.fold-lite > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after, details.fold-lite > summary::after {
+  content: ""; flex: none; width: .6rem; height: .6rem; border-right: 3px solid #0B0B0B; border-bottom: 3px solid #0B0B0B;
+  transform: rotate(45deg) translateY(-2px); transition: transform .2s ease;
+}
+details.fold[open] > summary::after, details.fold-lite[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+details.fold:not(.panel) { margin-bottom: 1rem; }
+details.fold:not(.panel) > summary { padding: .6rem 1rem; background: #FFFFFF; border: 2px solid #0B0B0B; box-shadow: 3px 3px 0 #0B0B0B; }
+details.fold:not(.panel)[open] > summary { box-shadow: none; }
+details.fold:not(.panel) > :not(summary) { margin-top: 1rem; }
+details.fold.panel > summary { padding: 0; }
+details.fold.panel[open] > summary { margin-bottom: .6rem; }
+details.fold-lite { margin-top: 1rem; border-top: 2px solid #0B0B0B; }
+details.fold-lite > summary { min-height: 44px; font-size: .9375rem; text-transform: uppercase; letter-spacing: .06em; }
+.sl { display: inline-flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.fbadge { background: #0B0B0B; color: #FFFFFF; padding: .1rem .5rem; font-size: .8125rem; font-weight: 700; }
+.pano-fold { margin: 0; }
+details.fold .pano { border: 0; box-shadow: none; padding: 0; margin: 0; background: transparent; }
+details.fold:not(.panel) > .pano, details#pano-d > .pano { background: #FFFFFF; border: 2px solid #0B0B0B; box-shadow: var(--hard); padding: 1.1rem 1.25rem; }
+details.fold small { font-weight: 400; font-size: .875rem; }
+@media (min-width: 760px) {
+  details.desk-flat > summary { display: none; }
+  details.desk-flat { margin-bottom: 0; }
+  details.desk-flat > :not(summary) { margin-top: 0; }
+  details#pano-d { margin-bottom: 1.5rem; }
+}
+
+/* Navegacion inferior (movil) */
+.bnav {
+  display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); background: #0B0B0B; border-top: 2px solid #0B0B0B;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bn {
+  display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 64px;
+  background: transparent; color: #FFFFFF; border: 0; cursor: pointer; font-weight: 700; font-size: .78rem; line-height: 1.1;
+  -webkit-tap-highlight-color: transparent;
+}
+.bn .ic { width: 24px; height: 24px; }
+.bn-go { color: var(--yellow); }
+.bn[aria-current="page"] { background: var(--yellow); color: #0B0B0B; }
+.bn:focus-visible { outline: 3px solid var(--yellow); outline-offset: -4px; }
+.sheet {
+  position: fixed; inset: auto 0 0 0; margin: 0; width: 100%; max-width: 100%; border: 0; padding: 0; background: transparent;
+  overflow: visible;
+}
+.sheet::backdrop { background: rgba(0,0,0,.6); }
+.sheet-in {
+  background: var(--yellow); border-top: 2px solid #0B0B0B; padding: 1rem 16px calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  display: grid; gap: 12px; color: #0B0B0B;
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.sheet-head h2 { font-family: var(--font-display); font-stretch: 65%; font-weight: 850; font-size: 1.8rem; text-transform: uppercase; line-height: 1; }
+.sheet-x { width: 44px; height: 44px; background: #FFFFFF; border: 2px solid #0B0B0B; font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #0B0B0B; }
+.sheet-item {
+  display: grid; gap: .15rem; text-align: left; min-height: 64px; padding: .75rem 1rem; background: #FFFFFF; color: #0B0B0B;
+  border: 2px solid #0B0B0B; box-shadow: 3px 3px 0 #0B0B0B; cursor: pointer;
+}
+.sheet-item b { font-family: var(--font-display); font-stretch: 78%; font-weight: 750; font-size: 1.35rem; line-height: 1.1; }
+.sheet-item span { font-size: .9375rem; }
+.sheet-item:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #0B0B0B; }
+
+/* Lamina QR */
+.qrbox { background: #FFFFFF; padding: 10px; border: 3px solid var(--stage-accent); width: min(250px, 68vw); justify-self: start; align-self: center; }
+.qrbox .qr { display: block; width: 100%; height: auto; }
+.s-two > div > * + * { margin-top: .9rem; }
+.s-url { color: var(--stage-accent); font-weight: 700; word-break: break-all; font-size: clamp(.9rem, 1.6vw, 1.1rem); }
+
+/* Barra de progreso del visor */
+.dprog { display: none; grid-column: 1 / -1; height: 5px; background: var(--stage-line); }
+.dprog span { display: block; height: 100%; width: 0; background: var(--stage-accent); transition: width .3s ease; }
+@media (prefers-reduced-motion: reduce) { .dprog span { transition: none; } }
+
+/* ---- Movil ---- */
+@media (max-width: 759px) {
+  body { padding-bottom: calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px)); }
+  .bnav { display: grid; }
+  .tabwrap { display: none; }
+  .top .wrap { padding-block: .4rem; }
+  .brand { font-size: 1.45rem; }
+  .demo .wrap { padding-block: .4rem; }
+  .demo { font-size: .8125rem; }
+
+  .hero { padding-block: 1.5rem 1.75rem; }
+  h1 { font-size: 13vw; margin-block: .4rem 1rem; }
+  .lede { font-size: 1.1rem; }
+  .hero-actions { flex-direction: column; }
+  .hero-actions .btn { justify-content: center; min-height: 52px; font-size: 1.0625rem; }
+  .wave { margin-top: 1.5rem; }
+  .axes-title { margin-top: 1.75rem; }
+  .axis { padding: .85rem .9rem; }
+  #feed-home li:nth-child(n+3) { display: none; }
+  .latest { padding-block: 1.5rem; }
+  .h-sm { font-size: 1.7rem; }
+  .view { padding-block: 1.5rem; }
+  .sec-head { margin-bottom: 1.25rem; }
+  .sec-head h2 { font-size: 2.3rem; }
+  .feed li { grid-template-columns: 3.4rem minmax(0, 1fr); gap: .75rem; }
+  .case { padding: 1rem; }
+  .case h3 { font-size: 1.45rem; }
+
+  /* Novedades: reunion primero (compacta), luego avisos, resumen al final */
+  #p-novedades .split > aside { display: contents; }
+  #p-novedades .js-next { order: -1; }
+  #p-novedades .summary { order: 2; margin-top: 0; }
+
+  /* Presentacion */
+  .deck { overflow: visible; }
+  .phases { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: .6rem 12px; }
+  .phases::-webkit-scrollbar { display: none; }
+  .phase { flex: none; }
+  .stage { padding: 1.25rem 1rem; min-height: 22rem; touch-action: pan-y; }
+  .dots, #d-full { display: none; }
+  .deckbar {
+    position: sticky; bottom: calc(var(--bnav-h) + env(safe-area-inset-bottom, 0px)); z-index: 20; background: #0B0B0B;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; padding: .5rem 12px; border-top: 2px solid var(--stage-accent);
+  }
+  .dprog { display: block; }
+  .deckbar .dbtn { min-height: 52px; font-size: 1.0625rem; }
+  .deckbar .count { text-align: center; margin: 0; }
+  #d-next { background: var(--stage-accent); color: #0B0B0B; border-color: var(--stage-accent); }
+  #d-next:disabled { background: transparent; color: var(--stage-fg); border-color: var(--stage-line); }
+}
+@media (min-width: 760px) { .bnav, .sheet { display: none; } }
+.sheet:not([open]) { display: none; }
+
+/* Sin hover en tactil: evita estados pegados tras tocar */
+@media (hover: none) {
+  .axis:hover, .mycall:hover { transform: none; box-shadow: var(--hard); }
+  .btn:hover { transform: none; box-shadow: 3px 3px 0 #0B0B0B; }
+  .chip:hover { background: #FFFFFF; }
+  .chip[aria-pressed="true"]:hover { background: #0B0B0B; }
+  .tab:hover { background: transparent; }
+  .btn-sm:hover { background: #FFFFFF; }
+  .btn-sm[aria-pressed="true"]:hover { background: #0B0B0B; }
+}
+.btn:active, .btn-sm:active, .chip:active, .axis:active, .mycall:active { transform: translate(2px, 2px); }
+.btn:active { box-shadow: 1px 1px 0 #0B0B0B; }
+
+/* Animaciones (solo si el usuario no pidio reducir movimiento) */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes sheetup { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes fadebd { from { opacity: 0; } to { opacity: 1; } }
+  .view.is-in > * { animation: fadein .3s ease both; }
+  .view.is-in :is(.axes, .cases, .feed, .mycalles-grid, .trio, .duo, .chips) > * { animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
+  .view.is-in :is(.axes, .cases, .feed, .mycalles-grid, .trio, .duo) > :nth-child(2) { animation-delay: .07s; }
+  .view.is-in :is(.axes, .cases, .feed, .mycalles-grid, .trio, .duo) > :nth-child(3) { animation-delay: .14s; }
+  .view.is-in :is(.axes, .cases, .feed, .mycalles-grid, .trio, .duo) > :nth-child(4) { animation-delay: .21s; }
+  .view.is-in :is(.axes, .cases, .feed, .mycalles-grid, .trio, .duo) > :nth-child(n+5) { animation-delay: .28s; }
+  .view.is-in .bars .fill { transform-origin: left center; animation: grow .8s .15s cubic-bezier(.2,.7,.2,1) both; }
+  .view.is-in .steps li.on::before { transform-origin: left center; animation: grow .6s .2s ease-out both; }
+  details.fold[open] > :not(summary), details.fold-lite[open] > :not(summary) { animation: rise .3s ease both; }
+  .sheet[open] .sheet-in { animation: sheetup .28s cubic-bezier(.2,.8,.2,1); }
+  .sheet[open]::backdrop { animation: fadebd .25s ease; }
+  .slide.on { animation: rise .35s ease both; }
+  .bn { transition: background-color .15s ease, color .15s ease; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<div class="demo"><div class="wrap"><p>Versión de demostración. Los avisos, casos y fechas son ejemplos para probar la estructura.</p></div></div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio" data-go="inicio">Vive Lastarria</a>
+    <div class="tabwrap">
+      <div class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab" role="tab" id="tab-inicio" aria-controls="p-inicio" aria-selected="true">Inicio</button>
+        <button class="tab" role="tab" id="tab-novedades" aria-controls="p-novedades" aria-selected="false" tabindex="-1">Novedades</button>
+        <button class="tab" role="tab" id="tab-casos" aria-controls="p-casos" aria-selected="false" tabindex="-1">Casos</button>
+        <button class="tab" role="tab" id="tab-guia" aria-controls="p-guia" aria-selected="false" tabindex="-1">Guía</button>
+        <button class="tab go" role="tab" id="tab-reportar" aria-controls="p-reportar" aria-selected="false" tabindex="-1">Reportar</button>
+        <button class="tab" role="tab" id="tab-comision" aria-controls="p-comision" aria-selected="false" tabindex="-1">Comisión</button>
+        <button class="tab alt" role="tab" id="tab-presentacion" aria-controls="p-presentacion" aria-selected="false" tabindex="-1">Presentación del caso</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <!-- INICIO -->
+  <section class="view home" id="p-inicio" role="tabpanel" aria-labelledby="tab-inicio" tabindex="0">
+    <div class="ticker" aria-hidden="true"><div class="ticker-track">
+      <span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span><span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span><span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span><span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span>
+      <span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span><span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span><span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span><span>Vive Lastarria ✦ Un barrio que se cuida entre todos ✦</span>
+    </div></div>
+    <div class="hero wrap">
+      <p class="eyebrow">Espacio vecinal · Barrio Lastarria, Santiago</p>
+      <h1><span>Vive</span><br>Lastarria</h1>
+      <p class="lede">Avisos, casos y gestiones del barrio en un solo lugar, ordenados para quienes viven y trabajan en Lastarria.</p>
+      <div class="hero-actions">
+        <button type="button" class="btn primary" data-go="reportar">Reportar un problema</button>
+        <button type="button" class="btn ghost" data-go="casos">Ver casos del barrio</button>
+      </div>
+
+      <div class="wave">
+        <svg viewBox="0 0 1000 90" preserveAspectRatio="none" role="img" aria-label="Línea de sonido que pasa de muy agitada a completamente plana">
+          <line class="base" x1="0" x2="1000" y1="45" y2="45"/>
+          <path id="wavePath" d=""/>
+        </svg>
+        <div class="cap"><span>Cómo suena hoy</span><span>Cómo queremos vivirlo</span></div>
+      </div>
+
+      <p class="axes-title">Empieza por lo que te afecta</p>
+      <div class="axes" id="axes"></div>
+      <div class="mycalles" id="mycalles"></div>
+    </div>
+
+    <div class="latest">
+      <div class="wrap">
+        <div class="latest-head">
+          <h2 class="h-sm">Lo último</h2>
+          <button type="button" class="link" data-go="novedades">Ver todas las novedades</button>
+        </div>
+        <div class="split">
+          <ul class="feed" id="feed-home"></ul>
+          <aside aria-label="Próxima reunión"><div class="next js-next"></div></aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOVEDADES -->
+  <section class="view" id="p-novedades" role="tabpanel" aria-labelledby="tab-novedades" tabindex="0" hidden>
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Novedades</h2>
+        <p>Avisos de la Comisión y del barrio, del más reciente al más antiguo.</p>
+      </div>
+      <div class="split">
+        <div>
+          <div class="filters">
+            <div class="fgroup"><span class="flabel" id="fl-av">Tema</span><div class="chips" id="chips-avisos" role="group" aria-labelledby="fl-av"></div></div>
+          </div>
+          <ul class="feed" id="feed"></ul>
+        </div>
+        <aside aria-label="Próxima reunión y resumen">
+          <div class="next js-next"></div>
+          <details class="panel summary fold" data-fold="auto">
+            <summary><span class="sl">Resumen para tu grupo de WhatsApp</span></summary>
+            <p class="hint">Se arma solo con los avisos y casos de esta página.</p>
+            <textarea class="preview" id="summary" rows="13" readonly aria-label="Resumen para WhatsApp"></textarea>
+            <div class="actions"><button type="button" class="btn primary" id="copy-sum">Copiar resumen</button></div>
+            <p class="status" id="sum-status" role="status"></p>
+          </details>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASOS -->
+  <section class="view" id="p-casos" role="tabpanel" aria-labelledby="tab-casos" tabindex="0" hidden>
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Casos del barrio</h2>
+        <p>Cada caso indica qué pasa, dónde, cuántos vecinos lo viven y en qué etapa va.</p>
+      </div>
+      <details class="fold desk-flat" id="pano-d" data-fold="auto">
+        <summary><span class="sl" id="pano-sum">Panorama del barrio</span></summary>
+        <section class="pano" id="pano" aria-label="Panorama del barrio"></section>
+      </details>
+      <details class="fold desk-flat filt" id="filt-d" data-fold="auto">
+        <summary><span class="sl">Filtrar casos <span class="fbadge" id="fil-n" hidden></span></span></summary>
+      <div class="filters">
+        <div class="fgroup"><span class="flabel" id="fl-cat">Tipo</span><div class="chips" id="chips-cat" role="group" aria-labelledby="fl-cat"></div></div>
+        <div class="fgroup"><span class="flabel" id="fl-calle">Calle</span><div class="chips" id="chips-calle" role="group" aria-labelledby="fl-calle"></div></div>
+        <div class="fgroup"><span class="flabel" id="fl-est">Estado</span><div class="chips" id="chips-estado" role="group" aria-labelledby="fl-est"></div></div>
+      </div>
+      </details>
+      <p class="hint" id="casos-n" role="status" aria-live="polite"></p>
+      <p class="hint">Seguir una calle la destaca en Inicio de este navegador. No envía notificaciones.</p>
+      <div class="cases" id="cases" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- GUIA -->
+  <section class="view" id="p-guia" role="tabpanel" aria-labelledby="tab-guia" tabindex="0" hidden>
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Qué hacer si…</h2>
+        <p>Pasos simples para registrar un problema de modo que la Comisión pueda usarlo.</p>
+      </div>
+      <div class="split">
+        <div>
+          <details class="acc" open>
+            <summary><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4h4l5 4V6L7 10H3z"/><path d="M16 9a4 4 0 010 6"/><path d="M19 6.5a8 8 0 010 11"/></svg>Hay ruido a deshoras</summary>
+            <ol>
+              <li>Anota la hora de inicio y de término, la calle y el tipo de ruido.</li>
+              <li>Graba 30 a 60 segundos de audio o video del ambiente. Evita mostrar rostros.</li>
+              <li>Pregunta en el grupo de tu sector si otros vecinos lo escuchan.</li>
+              <li>Envía el registro con la pestaña Reportar para sumarlo a un caso.</li>
+              <li>Si hay una pelea, un riesgo o una emergencia, llama a Carabineros al 133.</li>
+            </ol>
+          </details>
+          <details class="acc">
+            <summary><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Los muros están llenos de afiches y stickers</summary>
+            <ol>
+              <li>Toma una foto general y otra de cerca, con la calle visible.</li>
+              <li>Anota la dirección o el número más cercano y la fecha.</li>
+              <li>Indica si es una fachada de vivienda, de local o un muro público.</li>
+              <li>Envía el registro para sumarlo al caso de tu calle.</li>
+            </ol>
+          </details>
+          <details class="acc">
+            <summary><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>Hay basura de un local en la calle</summary>
+            <ol>
+              <li>Anota la hora y toma una foto del lugar donde está la basura.</li>
+              <li>Indica la dirección y, si se ve, el número del local. Describe el hecho, sin acusar.</li>
+              <li>Revisa si ya existe un caso en tu calle para sumar tu registro.</li>
+              <li>Envía el registro con la pestaña Reportar.</li>
+            </ol>
+          </details>
+          <p class="note">Estos pasos son un borrador. La Comisión del Ruido debe validarlos antes de la versión oficial.</p>
+        </div>
+        <aside>
+          <div class="panel">
+            <h3>Un buen reporte tiene cinco datos</h3>
+            <ul>
+              <li>Qué pasa</li>
+              <li>Dónde</li>
+              <li>Cuándo, con fecha y hora</li>
+              <li>Evidencia: foto, video o audio</li>
+              <li>Cuántos vecinos lo viven</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>Cómo se publica un caso</h3>
+            <ol>
+              <li>Recibimos tu reporte con los cinco datos.</li>
+              <li>La Comisión lo revisa y lo suma al caso de esa calle y ese problema.</li>
+              <li>Se publica con calle, vecinos afectados y etapa.</li>
+              <li>Se actualiza hasta que el caso se resuelve.</li>
+            </ol>
+          </div>
+          <div class="panel soft">
+            <h3>Reglas para publicar</h3>
+            <ul>
+              <li>Describe hechos, no personas. Sin nombres, rostros ni patentes.</li>
+              <li>Un caso por calle y por problema.</li>
+              <li>Sin insultos ni acusaciones sin evidencia.</li>
+              <li>La Comisión revisa cada reporte antes de publicarlo y retira lo que ataque a personas.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTAR -->
+  <section class="view" id="p-reportar" role="tabpanel" aria-labelledby="tab-reportar" tabindex="0" hidden>
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Arma tu reporte</h2>
+        <p>Completa los datos y copia el mensaje. Pégalo en el grupo de WhatsApp de tu sector o envíalo a la Comisión.</p>
+      </div>
+      <div class="caso-banner" id="r-caso" hidden><span>Te sumas al caso: <b id="r-caso-t"></b></span><button type="button" class="link" id="r-caso-x">Quitar</button></div>
+      <div class="report">
+        <form id="form" autocomplete="off">
+          <div class="field">
+            <label for="r-tipo">Tipo de problema</label>
+            <select id="r-tipo">
+              <option>Ruido sonoro</option>
+              <option>Ruido visual</option>
+              <option>Residuos</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="r-calle">Calle o lugar</label>
+            <input type="text" id="r-calle" list="calles" placeholder="Por ejemplo: Villavicencio">
+            <datalist id="calles">
+              <option value="José Victorino Lastarria"></option>
+              <option value="Villavicencio"></option>
+              <option value="Rosal"></option>
+              <option value="Merced"></option>
+              <option value="Monjitas"></option>
+              <option value="José Miguel de la Barra"></option>
+              <option value="Plaza Mulato Gil de Castro"></option>
+            </datalist>
+          </div>
+          <div class="timer" id="timer" hidden>
+            <div class="timer-head"><span class="flabel">Registro de episodio</span><output class="t-out" id="t-out">00:00:00</output></div>
+            <p class="hint">Inicia el cronómetro cuando empiece el ruido y termínalo cuando pare. Se completan la fecha, la hora y la duración.</p>
+            <div class="actions">
+              <button type="button" class="btn ghost" id="t-start">Iniciar registro</button>
+              <button type="button" class="btn primary" id="t-stop" disabled>Terminar y usar en el reporte</button>
+            </div>
+            <p class="status" id="t-status" role="status"></p>
+          </div>
+          <div class="field">
+            <label for="r-cuando">Fecha y hora</label>
+            <input type="datetime-local" id="r-cuando">
+          </div>
+          <div class="field">
+            <label for="r-desc">Qué pasa</label>
+            <textarea id="r-desc" rows="3" placeholder="Describe el hecho: qué se escucha o se ve, y por cuánto rato." aria-describedby="r-hint r-nudge"></textarea>
+            <p class="hint" id="r-hint">Sin nombres, rostros, patentes ni teléfonos.</p>
+            <p class="nudge" id="r-nudge" role="status" hidden></p>
+          </div>
+          <details class="fold desk-flat opt" data-fold="auto">
+            <summary><span class="sl">Más detalles <small>(opcional)</small></span></summary>
+          <div class="field">
+            <label for="r-dur">Duración aproximada (minutos)</label>
+            <input type="number" id="r-dur" min="0" max="1440" inputmode="numeric" placeholder="Por ejemplo: 90">
+          </div>
+          <div class="field">
+            <label for="r-frec">Frecuencia</label>
+            <select id="r-frec">
+              <option>Sin indicar</option>
+              <option>Primera vez</option>
+              <option>Se repite varios días</option>
+              <option>Ocurre casi todos los días</option>
+            </select>
+          </div>
+          <fieldset class="field">
+            <legend>Evidencia que tienes</legend>
+            <div class="checks">
+              <label><input type="checkbox" name="ev" value="foto"> Foto</label>
+              <label><input type="checkbox" name="ev" value="video"> Video</label>
+              <label><input type="checkbox" name="ev" value="audio"> Audio</label>
+            </div>
+          </fieldset>
+          <div class="field">
+            <label for="r-vec">Vecinos afectados</label>
+            <select id="r-vec">
+              <option>Solo yo</option>
+              <option>Varios vecinos lo viven</option>
+              <option>No lo sé</option>
+            </select>
+          </div>
+          </details>
+        </form>
+        <div class="preview-box">
+          <label class="flabel" for="preview">Mensaje listo para enviar</label>
+          <textarea class="preview" id="preview" rows="11" readonly></textarea>
+          <div class="actions">
+            <button type="button" class="btn primary" id="copy">Copiar mensaje</button>
+            <a class="btn ghost" id="wa" href="https://wa.me/" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+          </div>
+          <p class="status" id="status" role="status"></p>
+          <details class="panel route fold" data-fold="auto">
+            <summary><span class="sl">¿A quién avisar?</span></summary>
+            <ol class="route-list" id="route-list"></ol>
+            <p class="hint">Este reporte no es una denuncia formal: sirve para reunir evidencia y coordinar a los vecinos.</p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMISION -->
+  <section class="view" id="p-comision" role="tabpanel" aria-labelledby="tab-comision" tabindex="0" hidden>
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Comisión y canales</h2>
+        <p>Quién hace qué en la organización del barrio.</p>
+      </div>
+      <div class="trio">
+        <div class="panel">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c3 .2 5 2.2 5 5.3"/></svg>
+          <h3>Comisión del Ruido</h3>
+          <p>Organización vecinal que conversa estos temas, define reglas y coordina acciones para cuidar el buen vivir del sector.</p>
+          <span class="badge">Contacto por definir</span>
+        </div>
+        <div class="panel">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>
+          <h3>Grupos de WhatsApp</h3>
+          <p>Vecinos conectados para informarse y coordinarse al instante.</p>
+          <span class="badge">Enlaces por definir</span>
+        </div>
+        <div class="panel">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg>
+          <h3>Vive Lastarria</h3>
+          <p>Deja ordenado y a la vista lo que en el chat se pierde: avisos, casos y su estado.</p>
+          <span class="badge here">Estás aquí</span>
+        </div>
+      </div>
+      <h3 class="roles-title">Cómo se complementan</h3>
+      <div class="roles">
+        <div class="role"><p class="q">Algo pasa ahora</p><p class="a">Grupo de WhatsApp</p></div>
+        <div class="role"><p class="q">Hay que decidir o coordinar</p><p class="a">Comisión del Ruido</p></div>
+        <div class="role"><p class="q">Debe quedar registrado y visible</p><p class="a">Vive Lastarria</p></div>
+      </div>
+      <h3 class="roles-title">Canales oficiales</h3>
+      <div class="duo">
+        <div class="panel">
+          <h3>VECI STGO</h3>
+          <p>App de la Municipalidad de Santiago para reportar problemas del barrio y recibir alertas. Un reporte ahí es un aviso, no una denuncia formal.</p>
+        </div>
+        <div class="panel">
+          <h3>Carabineros · 133</h3>
+          <p>Para peleas, riesgos o emergencias. Llama primero y después registra el hecho aquí.</p>
+        </div>
+      </div>
+      <p class="note">Vive Lastarria complementa estos canales; no los reemplaza.</p>
+    </div>
+  </section>
+
+  <!-- PRESENTACION DEL CASO -->
+  <section class="view" id="p-presentacion" role="tabpanel" aria-labelledby="tab-presentacion" tabindex="0" hidden>
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>Presentación del caso</h2>
+        <p>Recorrido completo del caso. Las etapas Observación, Insight, Idea y Prototipo van siempre en ese orden. Avanza con los botones o las flechas del teclado.</p>
+      </div>
+
+      <div class="deck" id="deck">
+        <ol class="phases" id="phases" aria-label="Etapas del caso">
+          <li><button type="button" class="phase" data-fase="1"><b>1</b>Observación</button></li>
+          <li><button type="button" class="phase" data-fase="2"><b>2</b>Insight</button></li>
+          <li><button type="button" class="phase" data-fase="3"><b>3</b>Idea</button></li>
+          <li><button type="button" class="phase" data-fase="4"><b>4</b>Prototipo</button></li>
+        </ol>
+        <div class="stage" id="stage" aria-live="polite">
+
+          <div class="slide on">
+            <p class="s-eyebrow">Caso · Design Thinking</p>
+            <h2 class="s-title big"><span class="a">Vive</span> Lastarria</h2>
+            <p class="s-text">Un espacio de comunicación ordenado para quienes viven y trabajan en el Barrio Lastarria.</p>
+            <p class="s-text s-mute">Público: habitantes y residentes del barrio.</p>
+            <svg class="swave" viewBox="0 0 1000 90" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" x2="1000" y1="45" y2="45"/>
+              <path id="wave2"/>
+            </svg>
+          </div>
+
+          <div class="slide" data-fase="1">
+            <p class="s-eyebrow">1 · Observación · Identificación del problema</p>
+            <h2 class="s-title">Del emblema cultural al foco turístico</h2>
+            <p class="s-text">Una visión empresarial agresiva transformó el barrio en un sector repleto de locales de comida.</p>
+            <p class="s-text">Ese cambio desplaza de forma indirecta a vecinos y trabajadores locales. Para quienes han vivido años en el sector, el ambiente se volvió hostil.</p>
+          </div>
+
+          <div class="slide" data-fase="1">
+            <p class="s-eyebrow">1 · Observación · Lo que se ve y se oye</p>
+            <h2 class="s-title">Tres formas de desgaste</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4h4l5 4V6L7 10H3z"/><path d="M16 9a4 4 0 010 6"/><path d="M19 6.5a8 8 0 010 11"/></svg>
+                <h4>Ruido sonoro</h4>
+                <p>Músicos con parlantes tocan canciones en bucle hasta la madrugada. Hay personas que trabajan y estudian al día siguiente.</p>
+              </div>
+              <div class="s-col">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                <h4>Ruido visual</h4>
+                <p>Stickers y afiches saturan las paredes con exceso de información.</p>
+              </div>
+              <div class="s-col">
+                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+                <h4>Residuos</h4>
+                <p>La basura que proviene de los locales de comida tiene un impacto evidente en las calles.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide" data-fase="1">
+            <p class="s-eyebrow">1 · Observación · Respuesta vecinal</p>
+            <h2 class="s-title">Los vecinos ya se organizan</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Comisión del Ruido</h4>
+                <p>Organización vecinal para hablar de estos temas, regular y coordinarse para preservar un buen vivir en el sector.</p>
+              </div>
+              <div class="s-col">
+                <h4>Grupos de WhatsApp</h4>
+                <p>Vecinos conectados para mantenerse informados y coordinados al instante.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide" data-fase="2">
+            <p class="s-eyebrow">2 · Insight</p>
+            <h2 class="s-title big">La vida de la gente del barrio está cambiando</h2>
+            <p class="s-text s-mute">Insight de Design Thinking que da origen al proyecto.</p>
+          </div>
+
+          <div class="slide" data-fase="2">
+            <p class="s-eyebrow">2 · Insight · Pregunta guía (propuesta)</p>
+            <h2 class="s-title">¿Cómo darles a los residentes un lugar ordenado para entender su barrio?</h2>
+            <p class="s-text s-mute">Pregunta de trabajo propuesta por el equipo. La información de hoy circula entre grupos de chat y reuniones vecinales; que falte un registro ordenado es una hipótesis por validar con los vecinos.</p>
+          </div>
+
+          <div class="slide">
+            <p class="s-eyebrow">Metodología</p>
+            <h2 class="s-title">Cómo llegamos al insight</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Observación participante</h4>
+                <p>El equipo se integra al entorno del barrio para observar desde dentro la vida cotidiana: sonidos, muros, calles y rutinas.</p>
+              </div>
+              <div class="s-col">
+                <h4>Entrevistas en profundidad</h4>
+                <p>Conversaciones abiertas con personas del barrio para entender cómo viven los cambios y qué necesitan.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide" data-fase="3">
+            <p class="s-eyebrow">3 · Idea · Solución y recurso (propuesta)</p>
+            <h2 class="s-title big"><span class="a">Vive</span> Lastarria</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Solución</h4>
+                <p>Un espacio de comunicación ordenado para que los residentes comprendan el día a día del barrio: información, casos puntuales y novedades.</p>
+              </div>
+              <div class="s-col">
+                <h4>Recurso</h4>
+                <p>Una página web con cuatro módulos: Novedades, Casos, Guía y reportes, y Comisión y canales.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide" data-fase="3">
+            <p class="s-eyebrow">3 · Idea · Cómo se complementa</p>
+            <h2 class="s-title">Cada canal hace lo suyo</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Grupos de WhatsApp</h4>
+                <p>Lo que pasa ahora: avisos y coordinación al instante.</p>
+              </div>
+              <div class="s-col">
+                <h4>Comisión del Ruido</h4>
+                <p>Lo que hay que decidir o coordinar entre vecinos.</p>
+              </div>
+              <div class="s-col">
+                <h4>Vive Lastarria</h4>
+                <p>Lo que debe quedar registrado y a la vista de todos.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide" data-fase="4">
+            <p class="s-eyebrow">4 · Prototipo · ¿Cómo funciona?</p>
+            <h2 class="s-title">Cuatro módulos en un solo lugar</h2>
+            <div class="s-cols">
+              <button type="button" class="s-col" data-go="novedades">
+                <h4>Novedades</h4>
+                <p>Avisos y próximas reuniones.</p>
+                <span class="go">Ver en el prototipo →</span>
+              </button>
+              <button type="button" class="s-col" data-go="casos">
+                <h4>Casos</h4>
+                <p>Qué pasa, dónde, cuántos vecinos y en qué etapa va.</p>
+                <span class="go">Ver en el prototipo →</span>
+              </button>
+              <button type="button" class="s-col" data-go="reportar">
+                <h4>Guía y reportes</h4>
+                <p>Pasos y un mensaje estandarizado para registrar problemas.</p>
+                <span class="go">Ver en el prototipo →</span>
+              </button>
+              <button type="button" class="s-col" data-go="comision">
+                <h4>Comisión y canales</h4>
+                <p>Quién hace qué en la organización del barrio.</p>
+                <span class="go">Ver en el prototipo →</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="slide" data-fase="4">
+            <p class="s-eyebrow">4 · Prototipo · ¿Cómo funciona? El recorrido de un caso</p>
+            <h2 class="s-title">Del reporte al caso resuelto</h2>
+            <ol class="s-steps">
+              <li><h4>El vecino registra</h4><p>Completa el reporte con los cinco datos y lo comparte en WhatsApp o con la Comisión.</p></li>
+              <li><h4>La Comisión agrupa</h4><p>Suma los reportes por calle y por problema.</p></li>
+              <li><h4>El caso se publica</h4><p>Con calle, vecinos afectados y etapa visible.</p></li>
+              <li><h4>Se actualiza</h4><p>El historial queda a la vista hasta que el caso se resuelve.</p></li>
+            </ol>
+            <p class="s-text s-mute">Flujo propuesto. Quién modera y publica lo define la Comisión.</p>
+          </div>
+
+          <div class="slide" data-fase="4">
+            <p class="s-eyebrow">4 · Prototipo · Decisiones de diseño</p>
+            <h2 class="s-title">Pensado para entender rápido</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Entrada por problema</h4>
+                <p>El inicio parte de ruido sonoro, ruido visual y residuos, no de un menú técnico.</p>
+              </div>
+              <div class="s-col">
+                <h4>Estado a la vista</h4>
+                <p>Cada caso muestra su etapa: reportado, en gestión o resuelto.</p>
+              </div>
+              <div class="s-col">
+                <h4>Hechos, no personas</h4>
+                <p>El reporte y las reglas evitan nombres, rostros y patentes.</p>
+              </div>
+              <div class="s-col">
+                <h4>Lectura fácil</h4>
+                <p>Tipografía legible, contraste alto y navegación pensada para el teléfono.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide" data-fase="4">
+            <p class="s-eyebrow">4 · Prototipo · Pruébalo ahora</p>
+            <div class="s-two">
+              <div>
+                <h2 class="s-title">Escanea y navega el prototipo</h2>
+                <p class="s-text">Ábrelo en tu teléfono. Prueba reportar un problema, filtrar los casos y seguir una calle.</p>
+                <p class="s-mute">Los avisos, casos y fechas son de ejemplo.</p>
+                <p class="s-url" id="qr-url"></p>
+              </div>
+              <div class="qrbox" id="qr-live" role="img" aria-label="Código QR con el enlace a esta página"></div>
+            </div>
+          </div>
+
+          <div class="slide">
+            <p class="s-eyebrow">Referentes · Mapa conceptual de nuestra problemática</p>
+            <h2 class="s-title sm">Del barrio que cambia a la falta de un lugar ordenado</h2>
+            <div class="cmap">
+              <ol class="cchain">
+                <li class="cn"><b>A</b><span>Lastarria pasa de emblema cultural a foco turístico y de locales de comida</span><span class="cl">genera</span></li>
+                <li class="cn"><b>B</b><span>Ruido sonoro, ruido visual y residuos</span><span class="cl">desgastan y desplazan a</span></li>
+                <li class="cn"><b>C</b><span>Residentes y trabajadores locales</span><span class="cl">se organizan en</span></li>
+                <li class="cn"><b>D</b><span>Comisión del Ruido y grupos de WhatsApp</span><span class="cl">pero falta (hipótesis)</span></li>
+                <li class="cn key"><b>E</b><span>Un lugar ordenado donde la información quede registrada y a la vista</span></li>
+              </ol>
+              <div class="cside">
+                <p class="s-eyebrow">Dónde actúan los referentes</p>
+                <ul class="ckey">
+                  <li><b>B</b><span>Reportar y dar seguimiento · Medir el ruido</span></li>
+                  <li><b>C</b><span>Participación ciudadana</span></li>
+                  <li><b>D–E</b><span>Conversar entre vecinos</span></li>
+                </ul>
+                <p class="s-text s-mute">Nuestra propuesta apunta al nudo E. En lo que revisamos, ningún referente combina comunicación entre vecinos, seguimiento de casos y foco en el desplazamiento de residentes.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide">
+            <p class="s-eyebrow">Referentes · Mapa conceptual de sus problemáticas</p>
+            <h2 class="s-title sm">Cada referente ataca una parte del problema</h2>
+            <div class="rmap">
+              <section class="rc wide" aria-label="Reportar y dar seguimiento">
+                <header><span class="rb">B</span><h4>Reportar y dar seguimiento</h4><p>Del vecino a la autoridad</p></header>
+                <div class="rcards">
+                  <article class="rcard"><h5>Barrios en Acción <i>· Chile</i></h5><p>Problemas del barrio, como ruidos molestos, sin un canal visible hacia el municipio y las juntas de vecinos.</p></article>
+                  <article class="rcard"><h5>VECI STGO <i>· Chile</i></h5><p>Reportes, alertas y trámites municipales repartidos en canales distintos.</p></article>
+                  <article class="rcard"><h5>Vecinos Conectados <i>· Chile</i></h5><p>Poco diálogo entre vecinos y municipio sobre problemas del espacio público.</p></article>
+                  <article class="rcard"><h5>FixMyStreet <i>· Reino Unido</i></h5><p>El vecino no sabe a quién reportar ni ve qué pasó después.</p></article>
+                </div>
+              </section>
+              <section class="rc" aria-label="Conversar entre vecinos">
+                <header><span class="rb">D–E</span><h4>Conversar entre vecinos</h4><p>Del vecino al vecino</p></header>
+                <div class="rcards">
+                  <article class="rcard"><h5>Front Porch Forum <i>· Vermont</i></h5><p>Conversaciones vecinales en línea que pueden volverse agresivas.</p></article>
+                  <article class="rcard"><h5>Nextdoor <i>· EE. UU.</i></h5><p>Vecinos cercanos sin contacto entre sí y contenido dañino que moderar.</p></article>
+                </div>
+              </section>
+              <section class="rc" aria-label="Participar en decisiones">
+                <header><span class="rb">C</span><h4>Participar en decisiones</h4><p>Del vecino a la ciudad</p></header>
+                <div class="rcards">
+                  <article class="rcard"><h5>Decidim <i>· Barcelona</i></h5><p>Pocas vías abiertas para que la ciudadanía participe en decisiones públicas.</p></article>
+                  <article class="rcard"><h5>Plan contra el ruido <i>· Berlín</i></h5><p>Un plan que necesita saber dónde sufre el ruido la gente.</p></article>
+                </div>
+              </section>
+              <section class="rc" aria-label="Medir el ruido">
+                <header><span class="rb">B</span><h4>Medir el ruido</h4><p>Del ruido a los datos</p></header>
+                <div class="rcards">
+                  <article class="rcard"><h5>Making Sense <i>· Barcelona</i></h5><p>Ruido que afecta la vida diaria de los vecinos de una plaza.</p></article>
+                  <article class="rcard"><h5>NoiseCapture <i>· Francia</i></h5><p>Faltan mapas de ruido que reflejen la realidad.</p></article>
+                </div>
+              </section>
+            </div>
+            <p class="rkey"><b>E · Vive Lastarria</b><span>Comunicación ordenada entre vecinos, con casos y estado visibles, centrada en el desplazamiento de residentes.</span></p>
+          </div>
+
+          
+<div class="slide">
+            <p class="s-eyebrow">Referentes · Qué tomamos de cada uno</p>
+            <h2 class="s-title sm">Del referente al prototipo</h2>
+            <div class="s-rows tk">
+              <div class="s-row"><b>Barrios en Acción</b><span>Casos visibles para todos y calles que se pueden seguir.</span><button type="button" class="s-go" data-go="casos">Ver en Casos →</button></div>
+              <div class="s-row"><b>VECI STGO</b><span>Dejar claro que un reporte es un aviso y no una denuncia, y enlazar el canal oficial.</span><button type="button" class="s-go" data-go="comision">Ver en Comisión →</button></div>
+              <div class="s-row"><b>Vecinos Conectados</b><span>Un panorama con cifras por tipo de problema.</span><button type="button" class="s-go" data-go="casos">Ver en Casos →</button></div>
+              <div class="s-row"><b>FixMyStreet</b><span>¿A quién avisar?, fecha de última actualización y sumarse a un caso existente.</span><button type="button" class="s-go" data-go="reportar">Ver en Reportar →</button></div>
+              <div class="s-row"><b>Front Porch Forum</b><span>Revisión antes de publicar, reglas de tono y una agenda que lleva a la reunión.</span><button type="button" class="s-go" data-go="guia">Ver en Guía →</button></div>
+              <div class="s-row"><b>Nextdoor</b><span>Un recordatorio al escribir: sin patentes ni teléfonos.</span><button type="button" class="s-go" data-go="reportar">Ver en Reportar →</button></div>
+              <div class="s-row"><b>Making Sense · NoiseCapture</b><span>Registro de episodio con cronómetro, duración y frecuencia.</span><button type="button" class="s-go" data-go="reportar">Ver en Reportar →</button></div>
+              <div class="s-row"><b>Decidim · Berlín</b><span>Historial público de cada caso y calles con más vecinos afectados.</span><button type="button" class="s-go" data-go="casos">Ver en Casos →</button></div>
+            </div>
+          </div>
+
+          
+<div class="slide">
+            <p class="s-eyebrow">Público beneficiario</p>
+            <h2 class="s-title">Quienes viven y trabajan en Lastarria</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Residentes</h4>
+                <p>Habitantes que viven el ruido y los cambios del barrio todos los días.</p>
+              </div>
+              <div class="s-col">
+                <h4>Trabajadores locales</h4>
+                <p>Personas que trabajan en el sector y también sienten el desplazamiento.</p>
+              </div>
+              <div class="s-col">
+                <h4>Comisión del Ruido</h4>
+                <p>Beneficiaria indirecta: cuenta con un registro ordenado para coordinar.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide">
+            <p class="s-eyebrow">Recursos utilizados</p>
+            <h2 class="s-title">Con qué trabajamos</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Humanos</h4>
+                <p>El equipo de trabajo y las personas del barrio que participaron en entrevistas y observación.</p>
+              </div>
+              <div class="s-col">
+                <h4>Metodológicos</h4>
+                <p>Design Thinking, entrevistas en profundidad y observación participante.</p>
+              </div>
+              <div class="s-col">
+                <h4>Tecnológicos</h4>
+                <p>Claude para diseñar y desarrollar el prototipo web, y los grupos de WhatsApp que los vecinos ya usan.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide">
+            <p class="s-eyebrow">Objetivos general y específico</p>
+            <h2 class="s-title">Qué buscamos lograr</h2>
+            <div class="s-two">
+              <div>
+                <p class="s-eyebrow s-mute">Objetivo general</p>
+                <p class="s-lead">Ofrecer a quienes viven y trabajan en el Barrio Lastarria un espacio de comunicación ordenado para comprender el día a día del barrio.</p>
+              </div>
+              <div>
+                <p class="s-eyebrow s-mute">Objetivos específicos</p>
+                <ol class="s-ol">
+                  <li>Reunir en un solo lugar los avisos y novedades del barrio y de la Comisión del Ruido.</li>
+                  <li>Mostrar el estado de los casos de ruido sonoro, ruido visual y residuos.</li>
+                  <li>Estandarizar los reportes vecinales para que sirvan como registro.</li>
+                  <li>Complementar los grupos de WhatsApp y a la Comisión, sin reemplazarlos.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide">
+            <p class="s-eyebrow">Evaluación</p>
+            <h2 class="s-title">Cómo sabremos si funciona</h2>
+            <div class="s-rows">
+              <div class="s-row"><b>Objetivo 1 · Reunir información</b><span>Avisos publicados por semana y visitas a Novedades.</span></div>
+              <div class="s-row"><b>Objetivo 2 · Mostrar el estado</b><span>Casos con la etapa al día, sobre el total de casos.</span></div>
+              <div class="s-row"><b>Objetivo 3 · Estandarizar reportes</b><span>Reportes recibidos con los cinco datos completos.</span></div>
+              <div class="s-row"><b>Objetivo 4 · Complementar canales</b><span>Opinión de vecinos y Comisión en una encuesta breve o entrevista de cierre.</span></div>
+            </div>
+          </div>
+
+          <div class="slide">
+            <p class="s-eyebrow">Impacto y reflexión</p>
+            <h2 class="s-title">Qué cambia y qué no</h2>
+            <div class="s-cols">
+              <div class="s-col">
+                <h4>Impacto esperado</h4>
+                <p>Vecinos mejor informados, casos con seguimiento visible y una Comisión con un registro propio.</p>
+              </div>
+              <div class="s-col">
+                <h4>Lo que no resuelve</h4>
+                <p>La página no frena por sí sola el desplazamiento. Ordena la información para que los vecinos se coordinen mejor.</p>
+              </div>
+              <div class="s-col">
+                <h4>Riesgos a cuidar</h4>
+                <p>Exponer a personas o locales, y depender de alguien que modere y mantenga el contenido.</p>
+              </div>
+              <div class="s-col">
+                <h4>Siguientes pasos</h4>
+                <p>Validar con la Comisión, definir quién modera y cargar contenido real.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="deckbar">
+          <div class="dprog" aria-hidden="true"><span id="d-bar"></span></div>
+          <button type="button" class="dbtn" id="d-prev">Anterior</button>
+          <button type="button" class="dbtn" id="d-next">Siguiente</button>
+          <span class="count" id="d-count" aria-hidden="true">1 / 8</span>
+          <div class="dots" id="d-dots"></div>
+          <button type="button" class="dbtn" id="d-full">Pantalla completa</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <a class="brand" href="#inicio" data-go="inicio">Vive Lastarria</a>
+    Espacio vecinal del Barrio Lastarria, Santiago de Chile. Versión de demostración.
+  </div>
+</footer>
+
+<nav class="bnav" id="bnav" aria-label="Navegación principal">
+  <button type="button" class="bn" data-go="inicio"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg><span>Inicio</span></button>
+  <button type="button" class="bn" data-go="novedades"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a7 7 0 0114 0c0 6 2 7 2 7H3s2-1 2-7z"/><path d="M10 20a2 2 0 004 0"/></svg><span>Novedades</span></button>
+  <button type="button" class="bn" data-go="casos"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 9h8M8 13h8M8 17h5"/></svg><span>Casos</span></button>
+  <button type="button" class="bn bn-go" data-go="reportar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span>Reportar</span></button>
+  <button type="button" class="bn" id="bn-more" aria-haspopup="dialog"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg><span>Más</span></button>
+</nav>
+<dialog class="sheet" id="sheet" aria-labelledby="sheet-t">
+  <div class="sheet-in">
+    <div class="sheet-head"><h2 id="sheet-t">Más secciones</h2><button type="button" class="sheet-x" id="sheet-x" aria-label="Cerrar">&#x2715;</button></div>
+    <button type="button" class="sheet-item" data-go="guia"><b>Guía</b><span>Qué hacer si hay ruido, afiches o basura</span></button>
+    <button type="button" class="sheet-item" data-go="comision"><b>Comisión</b><span>Quiénes son y cómo participar</span></button>
+    <button type="button" class="sheet-item" data-go="presentacion" id="si-pres"><b>Presentación del caso</b><span>Observación, insight, idea y prototipo</span></button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  };
+
+  /* Cambiar a false para ocultar la presentacion en la version publica */
+  var MOSTRAR_PRESENTACION = true;
+
+  var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function fd(iso) { var p = iso.split('-'); return { d: +p[2], m: MES[+p[1] - 1] }; }
+
+  var ICON = {
+    sound: '<path d="M3 10v4h4l5 4V6L7 10H3z"/><path d="M16 9a4 4 0 010 6"/><path d="M19 6.5a8 8 0 010 11"/>',
+    poster: '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    bin: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+    people: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c3 .2 5 2.2 5 5.3"/>',
+    pin: '<path d="M12 21s-6-5.2-6-10a6 6 0 0112 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/>'
+  };
+  function ic(n) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">' + ICON[n] + '</svg>'; }
+
+  var CATS = {
+    ruido: { label: 'Ruido sonoro', icon: 'sound', desc: 'Música amplificada y ruido hasta la madrugada.' },
+    imagen: { label: 'Ruido visual', icon: 'poster', desc: 'Muros cubiertos de afiches y stickers.' },
+    residuos: { label: 'Residuos', icon: 'bin', desc: 'Basura de locales de comida en la calle.' },
+    comision: { label: 'Comisión', icon: 'people', desc: '' }
+  };
+  var ESTADO = {
+    abierto: { label: 'Abierto', step: 0, css: '--st-open' },
+    gestion: { label: 'En gestión', step: 1, css: '--st-prog' },
+    resuelto: { label: 'Resuelto', step: 2, css: '--st-done' }
+  };
+  var ETAPAS = ['Reportado', 'En gestión', 'Resuelto'];
+
+  /* Fechas de ejemplo relativas a hoy, para que el prototipo siempre se vea al dia */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function isoOf(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function D(n) { var d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return isoOf(d); }
+  var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  function nextThursday() {
+    var d = new Date(); d.setHours(12, 0, 0, 0);
+    var add = (4 - d.getDay() + 7) % 7;
+    if (add < 2) add += 7;
+    d.setDate(d.getDate() + add);
+    return d;
+  }
+  var reunion = nextThursday();
+  var PROXIMA = {
+    iso: isoOf(reunion),
+    cuando: 'Jueves ' + reunion.getDate() + ' de ' + MESES[reunion.getMonth()] + ' · 20:00 h',
+    titulo: 'Reunión abierta de la Comisión del Ruido',
+    lugar: 'Lugar por confirmar',
+    que: 'Se revisan los casos activos y se acuerdan las acciones de la semana.'
+  };
+
+  var AVISOS = [
+    { fecha: D(-3), cat: 'ruido', titulo: 'Cómo registrar un episodio de ruido',
+      resumen: 'Sumamos una guía corta con los datos que necesita la Comisión: hora, calle, evidencia y cuántos vecinos lo viven.' },
+    { fecha: D(-7), cat: 'residuos', titulo: 'Se levanta información sobre retiro de basura',
+      resumen: 'La Comisión reúne los horarios en que se saca la basura de los locales. Si ves bolsas en la calle fuera de horario, súmalo al caso de tu calle.' },
+    { fecha: D(-11), cat: 'imagen', titulo: 'Recopilación de fotos de muros saturados',
+      resumen: 'Estamos juntando fotos con fecha y calle para mostrar cómo están los muros del barrio. Basta una foto general y una de cerca.' },
+    { fecha: D(-15), cat: 'comision', titulo: 'Propuesta para ordenar los grupos de WhatsApp',
+      resumen: 'Un grupo solo para avisos y otro para conversar entre vecinos, para que lo importante no se pierda entre mensajes.' }
+  ];
+
+  var CASOS = [
+    { titulo: 'Parlante amplificado hasta la madrugada', calle: 'Calle José Victorino Lastarria', k: 'lastarria', corta: 'José Victorino Lastarria',
+      cat: 'ruido', estado: 'gestion', desde: D(-12), vecinos: 9,
+      resumen: 'Música en bucle desde la tarde hasta pasada la medianoche, varios días seguidos.',
+      hitos: [
+        { f: D(-12), t: 'Primeros reportes en el grupo de WhatsApp.' },
+        { f: D(-9), t: 'La Comisión reúne registros con hora y video.' },
+        { f: D(-6), t: 'Se envía una solicitud formal a la Municipalidad.' }
+      ] },
+    { titulo: 'Afiches y stickers sobre una fachada', calle: 'Calle Villavicencio', k: 'villavicencio', corta: 'Villavicencio',
+      cat: 'imagen', estado: 'abierto', desde: D(-8), vecinos: 4,
+      resumen: 'Capas de afiches y stickers cubren el muro completo y se renuevan cada semana.',
+      hitos: [
+        { f: D(-8), t: 'Se publican las primeras fotos del muro.' }
+      ] },
+    { titulo: 'Bolsas de basura fuera de horario', calle: 'Calle Rosal', k: 'rosal', corta: 'Rosal',
+      cat: 'residuos', estado: 'gestion', desde: D(-15), vecinos: 6,
+      resumen: 'Bolsas de un local de comida quedan en la vereda desde la tarde y se rompen durante la noche.',
+      hitos: [
+        { f: D(-15), t: 'Reportes de varios vecinos de la cuadra.' },
+        { f: D(-11), t: 'Se registran horas y fotos durante una semana.' }
+      ] },
+    { titulo: 'Música en bucle en la plaza', calle: 'Plaza Mulato Gil de Castro', k: 'plaza', corta: 'Plaza Mulato Gil de Castro',
+      cat: 'ruido', estado: 'resuelto', desde: D(-45), vecinos: 12,
+      resumen: 'La música amplificada seguía hasta tarde. Se acordó un horario de término y se mantiene.',
+      hitos: [
+        { f: D(-45), t: 'Primeros reportes con hora y audio.' },
+        { f: D(-38), t: 'Reunión para acordar un horario de término.' },
+        { f: D(-31), t: 'El acuerdo se cumple. Caso cerrado.' }
+      ] }
+  ];
+
+  var CALLES = [];
+  CASOS.forEach(function (c) {
+    if (!CALLES.some(function (x) { return x.k === c.k; })) CALLES.push({ k: c.k, corta: c.corta });
+  });
+
+  /* Preferencias de este navegador: calles que el vecino sigue */
+  var LSK = 'vl-calles';
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) {
+    try {
+      if (v === null) window.localStorage.removeItem(k); else window.localStorage.setItem(k, v);
+    } catch (e) { /* sin almacenamiento: la preferencia dura solo esta visita */ }
+  }
+  var follows = [];
+  try { follows = JSON.parse(lsGet(LSK) || '[]'); } catch (e) { follows = []; }
+  if (!Array.isArray(follows)) follows = [];
+  follows = follows.filter(function (k) { return CALLES.some(function (c) { return c.k === k; }); });
+
+  var st = { aviso: 'todos', cat: 'todos', estado: 'todos', calle: 'todos', caso: null };
+
+  /* ---------- Navegacion por pestanas ---------- */
+  var VIEWS = ['inicio', 'novedades', 'casos', 'guia', 'reportar', 'comision'];
+  if (MOSTRAR_PRESENTACION) { VIEWS.push('presentacion'); }
+  else { $('#tab-presentacion').hidden = true; $('#p-presentacion').remove(); }
+
+  var curView = null, inTimer = 0;
+  function show(id, opts) {
+    if (VIEWS.indexOf(id) < 0) id = 'inicio';
+    VIEWS.forEach(function (v) {
+      var on = v === id, t = $('#tab-' + v);
+      $('#p-' + v).hidden = !on;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+    });
+    document.documentElement.setAttribute('data-view', id);
+    $('#tab-' + id).scrollIntoView({ inline: 'center', block: 'nearest' });
+    window.scrollTo(0, 0);
+    curView = id;
+    $$('.bn[data-go]').forEach(function (b) {
+      if (b.getAttribute('data-go') === id) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    var more = $('#bn-more');
+    if (['guia', 'comision', 'presentacion'].indexOf(id) > -1) more.setAttribute('aria-current', 'page'); else more.removeAttribute('aria-current');
+    var sh = $('#sheet');
+    if (sh.open) sh.close();
+    var sec = $('#p-' + id);
+    sec.classList.remove('is-in');
+    void sec.offsetWidth;
+    sec.classList.add('is-in');
+    clearTimeout(inTimer);
+    inTimer = setTimeout(function () { sec.classList.remove('is-in'); }, 1400);
+    if (!(opts && opts.noHash) && location.hash.replace('#', '') !== id) {
+      try { history.pushState(null, '', '#' + id); } catch (err) { try { location.hash = id; } catch (e2) {} }
+    }
+  }
+  function hashView() { var h = (location.hash || '').replace('#', ''); return VIEWS.indexOf(h) > -1 ? h : 'inicio'; }
+  function onNav() { var v = hashView(); if (v !== curView) show(v, { noHash: true }); }
+  window.addEventListener('popstate', onNav);
+  window.addEventListener('hashchange', onNav);
+
+  $('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('.tab');
+    if (b) show(b.id.replace('tab-', ''));
+  });
+  $('.tabs').addEventListener('keydown', function (e) {
+    var keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+    if (keys.indexOf(e.key) < 0) return;
+    var i = VIEWS.indexOf(e.target.id.replace('tab-', ''));
+    if (i < 0) return;
+    if (e.key === 'ArrowRight') i = (i + 1) % VIEWS.length;
+    else if (e.key === 'ArrowLeft') i = (i - 1 + VIEWS.length) % VIEWS.length;
+    else if (e.key === 'Home') i = 0;
+    else i = VIEWS.length - 1;
+    e.preventDefault();
+    show(VIEWS[i]);
+    $('#tab-' + VIEWS[i]).focus();
+  });
+  if (!MOSTRAR_PRESENTACION) { $('#si-pres').hidden = true; }
+  $('#bn-more').addEventListener('click', function () {
+    var sh = $('#sheet');
+    if (sh.showModal) sh.showModal(); else sh.setAttribute('open', '');
+  });
+  $('#sheet-x').addEventListener('click', function () { $('#sheet').close(); });
+  $('#sheet').addEventListener('click', function (e) { if (e.target === this) this.close(); });
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest('[data-go]');
+    if (!g) return;
+    e.preventDefault();
+    show(g.getAttribute('data-go'));
+  });
+
+  /* ---------- Desplegables: abiertos en escritorio, cerrados en movil ---------- */
+  var mqWide = window.matchMedia ? window.matchMedia('(min-width: 760px)') : { matches: true };
+  function foldAuto() { $$('details[data-fold="auto"]').forEach(function (d) { d.open = mqWide.matches; }); }
+  foldAuto();
+  if (mqWide.addEventListener) mqWide.addEventListener('change', foldAuto);
+
+  /* ---------- Inicio: entradas por problema ---------- */
+  function renderAxes() {
+    var h = '';
+    ['ruido', 'imagen', 'residuos'].forEach(function (k) {
+      var n = CASOS.filter(function (c) { return c.cat === k && c.estado !== 'resuelto'; }).length;
+      h += '<button type="button" class="axis" data-cat="' + k + '">' + ic(CATS[k].icon) +
+        '<span class="t">' + CATS[k].label + '</span><span class="d">' + CATS[k].desc + '</span>' +
+        '<span class="n">' + n + (n === 1 ? ' caso activo' : ' casos activos') + '</span></button>';
+    });
+    $('#axes').innerHTML = h;
+  }
+
+  /* ---------- Filtros ---------- */
+  var painters = {};
+  function setupChips(id, key, opts, onChange) {
+    var el = $(id);
+    function paint() {
+      el.innerHTML = opts.map(function (o) {
+        return '<button type="button" class="chip" data-v="' + o[0] + '" aria-pressed="' + (st[key] === o[0]) + '">' + o[1] + '</button>';
+      }).join('');
+    }
+    paint();
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('.chip');
+      if (!b) return;
+      st[key] = b.getAttribute('data-v');
+      paint();
+      onChange();
+    });
+    painters[key] = paint;
+  }
+
+  function renderNext() {
+    var f = fd(PROXIMA.iso);
+    var ag = CASOS.filter(function (c) { return c.estado === 'gestion'; }).map(function (c) {
+      return '<li><button type="button" class="link" data-calle="' + c.k + '">' + esc(c.titulo) + '</button><span>' + esc(c.corta) + '</span></li>';
+    }).join('');
+    var html =
+      '<p class="lab">Próxima reunión</p>' +
+      '<div class="head"><div class="tile"><b>' + f.d + '</b><i>' + f.m + '</i></div><h3>' + esc(PROXIMA.titulo) + '</h3></div>' +
+      '<p class="when">' + esc(PROXIMA.cuando) + '</p>' +
+      '<p class="where">' + esc(PROXIMA.lugar) + '</p>' +
+      '<p class="what">' + esc(PROXIMA.que) + '</p>' +
+      (ag ? '<details class="fold-lite" data-fold="auto"><summary>En agenda · ' + CASOS.filter(function (c) { return c.estado === 'gestion'; }).length + ' casos</summary><ul class="agenda">' + ag + '</ul></details>' : '') +
+      '<p class="what">Llega con tu registro: fecha, hora, calle y evidencia.</p>';
+    $$('.js-next').forEach(function (el) { el.innerHTML = html; });
+  }
+
+  function feedHtml(list) {
+    return list.map(function (a) {
+      var f = fd(a.fecha), c = CATS[a.cat];
+      return '<li><div class="date"><span class="day">' + f.d + '</span><span class="mon">' + f.m + '</span></div>' +
+        '<div><span class="tag">' + ic(c.icon) + c.label + '</span><h3>' + esc(a.titulo) + '</h3><p>' + esc(a.resumen) + '</p></div></li>';
+    }).join('');
+  }
+  function sortedAvisos() {
+    return AVISOS.slice().sort(function (a, b) { return a.fecha < b.fecha ? 1 : -1; });
+  }
+  function renderAvisos() {
+    var list = sortedAvisos().filter(function (a) { return st.aviso === 'todos' || a.cat === st.aviso; });
+    $('#feed').innerHTML = list.length ? feedHtml(list) : '<li class="empty">No hay avisos en este tema.</li>';
+  }
+  function renderHomeFeed() {
+    $('#feed-home').innerHTML = feedHtml(sortedAvisos().slice(0, 3));
+  }
+
+  function activos() { return CASOS.filter(function (c) { return c.estado !== 'resuelto'; }); }
+  function lastUpd(c) { return c.hitos[c.hitos.length - 1].f; }
+
+  function barsHtml(rows) {
+    var max = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
+    return '<ul class="bars">' + rows.map(function (r) {
+      return '<li><span class="lab">' + esc(r[0]) + '</span>' +
+        '<span class="track" aria-hidden="true"><span class="fill" style="width:' + Math.round(r[1] / max * 100) + '%"></span></span>' +
+        '<span class="val">' + r[1] + '</span></li>';
+    }).join('') + '</ul>';
+  }
+
+  function renderPano() {
+    var act = activos();
+    var vec = act.reduce(function (a, c) { return a + c.vecinos; }, 0);
+    var res = CASOS.length - act.length;
+    var porTipo = ['ruido', 'imagen', 'residuos'].map(function (k) {
+      return [CATS[k].label, act.filter(function (c) { return c.cat === k; }).length];
+    });
+    var porCalle = act.slice().sort(function (a, b) { return b.vecinos - a.vecinos; })
+      .map(function (c) { return [c.corta, c.vecinos]; });
+    $('#pano-sum').textContent = 'Panorama · ' + act.length + (act.length === 1 ? ' caso activo' : ' casos activos') + ' · ' + vec + ' vecinos';
+    $('#pano').innerHTML =
+      '<div class="pano-nums">' +
+        '<div><b>' + act.length + '</b><span>' + (act.length === 1 ? 'caso activo' : 'casos activos') + '</span></div>' +
+        '<div><b>' + vec + '</b><span>vecinos involucrados</span></div>' +
+        '<div><b>' + res + '</b><span>' + (res === 1 ? 'resuelto' : 'resueltos') + '</span></div>' +
+      '</div>' +
+      '<div><p class="flabel">Casos activos por tipo</p>' + barsHtml(porTipo) + '</div>' +
+      '<div><p class="flabel">Vecinos por calle</p>' + barsHtml(porCalle) + '</div>';
+  }
+
+  function renderMyCalles() {
+    var el = $('#mycalles');
+    if (!follows.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '<h2 class="h-sm">Tus calles</h2><div class="mycalles-grid">' + follows.map(function (k) {
+      var cs = CASOS.filter(function (c) { return c.k === k; });
+      var act = cs.filter(function (c) { return c.estado !== 'resuelto'; });
+      var vec = act.reduce(function (a, c) { return a + c.vecinos; }, 0);
+      var txt = act.length ? act.length + (act.length === 1 ? ' caso activo' : ' casos activos') + ' · ' + vec + ' vecinos' : 'Sin casos activos';
+      var upd = '';
+      if (act.length) {
+        var u = fd(act.map(lastUpd).sort().pop());
+        upd = '<span class="u">Actualizado el ' + u.d + ' ' + u.m + '</span>';
+      }
+      return '<button type="button" class="mycall" data-calle="' + k + '"><span class="t">' + esc(cs[0].corta) + '</span><span>' + txt + '</span>' + upd + '</button>';
+    }).join('') + '</div>';
+  }
+
+  function toggleFollow(k) {
+    var i = follows.indexOf(k);
+    if (i > -1) follows.splice(i, 1); else follows.push(k);
+    lsSet(LSK, JSON.stringify(follows));
+    var on = follows.indexOf(k) > -1;
+    $$('[data-follow="' + k + '"]').forEach(function (b) {
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.textContent = on ? 'Siguiendo calle' : 'Seguir calle';
+    });
+    renderMyCalles();
+  }
+
+  function renderCasos() {
+    var list = CASOS.filter(function (c) {
+      return (st.cat === 'todos' || c.cat === st.cat) && (st.estado === 'todos' || c.estado === st.estado) &&
+        (st.calle === 'todos' || c.k === st.calle);
+    });
+    var nf = (st.cat !== 'todos') + (st.estado !== 'todos') + (st.calle !== 'todos');
+    var fb = $('#fil-n');
+    fb.hidden = !nf; fb.textContent = nf + (nf === 1 ? ' activo' : ' activos');
+    $('#casos-n').textContent = 'Mostrando ' + list.length + ' de ' + CASOS.length + (CASOS.length === 1 ? ' caso.' : ' casos.');
+    if (!list.length) { $('#cases').innerHTML = '<p class="empty">No hay casos con estos filtros.</p>'; return; }
+    $('#cases').innerHTML = list.map(function (c) {
+      var e = ESTADO[c.estado], cat = CATS[c.cat], d = fd(c.desde), u = fd(lastUpd(c));
+      var steps = ETAPAS.map(function (n, i) {
+        return '<li' + (i <= e.step ? ' class="on"' : '') + (i === e.step ? ' aria-current="step"' : '') + '>' + n + '</li>';
+      }).join('');
+      var log = c.hitos.map(function (h) {
+        var x = fd(h.f);
+        return '<li><time datetime="' + h.f + '">' + x.d + ' ' + x.m + '</time><span>' + esc(h.t) + '</span></li>';
+      }).join('');
+      var on = follows.indexOf(c.k) > -1;
+      return '<article class="case" style="--st:var(' + e.css + ')">' +
+        '<div class="row"><span class="pill">' + e.label + '</span><span class="cat">' + ic(cat.icon) + cat.label + '</span></div>' +
+        '<h3>' + esc(c.titulo) + '</h3>' +
+        '<p class="where">' + ic('pin') + esc(c.calle) + '</p>' +
+        '<p class="sum">' + esc(c.resumen) + '</p>' +
+        '<ol class="steps" aria-label="Etapa del caso: ' + e.label + '">' + steps + '</ol>' +
+        '<p class="meta">' + c.vecinos + ' vecinos lo reportan · desde el ' + d.d + ' ' + d.m + ' · actualizado el ' + u.d + ' ' + u.m + '</p>' +
+        '<div class="case-actions">' +
+          '<button type="button" class="btn-sm" data-join="' + CASOS.indexOf(c) + '">Me afecta también</button>' +
+          '<button type="button" class="btn-sm" data-follow="' + c.k + '" aria-pressed="' + on + '">' + (on ? 'Siguiendo calle' : 'Seguir calle') + '</button>' +
+        '</div>' +
+        '<details><summary>Ver historial</summary><ol class="log">' + log + '</ol></details></article>';
+    }).join('');
+  }
+
+  function summaryText() {
+    var act = activos();
+    var lines = [
+      '*Vive Lastarria · resumen*',
+      'Próxima reunión: ' + PROXIMA.cuando + ' (' + PROXIMA.lugar.toLowerCase() + ')',
+      '',
+      'Casos activos (' + act.length + '):'
+    ];
+    act.forEach(function (c) {
+      lines.push('• ' + c.titulo + ' · ' + c.corta + ' · ' + ESTADO[c.estado].label + ' · ' + c.vecinos + ' vecinos');
+    });
+    lines.push('', 'Novedades:');
+    sortedAvisos().slice(0, 3).forEach(function (a) {
+      var x = fd(a.fecha);
+      lines.push('• ' + x.d + ' ' + x.m + ' · ' + a.titulo);
+    });
+    lines.push('', 'Detalle y reportes en Vive Lastarria.');
+    return lines.join('\n');
+  }
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  renderAxes();
+  renderNext();
+  renderHomeFeed();
+  renderPano();
+  renderMyCalles();
+  setupChips('#chips-avisos', 'aviso',
+    [['todos', 'Todos'], ['ruido', 'Ruido sonoro'], ['imagen', 'Ruido visual'], ['residuos', 'Residuos'], ['comision', 'Comisión']],
+    renderAvisos);
+  setupChips('#chips-cat', 'cat',
+    [['todos', 'Todos'], ['ruido', 'Ruido sonoro'], ['imagen', 'Ruido visual'], ['residuos', 'Residuos']],
+    renderCasos);
+  setupChips('#chips-calle', 'calle',
+    [['todos', 'Todas']].concat(CALLES.map(function (c) { return [c.k, c.corta]; })),
+    renderCasos);
+  setupChips('#chips-estado', 'estado',
+    [['todos', 'Todos'], ['abierto', 'Abiertos'], ['gestion', 'En gestión'], ['resuelto', 'Resueltos']],
+    renderCasos);
+  renderAvisos();
+  renderCasos();
+  $('#summary').value = summaryText();
+
+  function resetFilters() {
+    st.cat = 'todos'; st.estado = 'todos'; st.calle = 'todos';
+    painters.cat(); painters.estado(); painters.calle();
+  }
+
+  $('#axes').addEventListener('click', function (e) {
+    var b = e.target.closest('.axis');
+    if (!b) return;
+    resetFilters();
+    st.cat = b.getAttribute('data-cat');
+    painters.cat();
+    renderCasos();
+    show('casos');
+  });
+
+  /* Calle elegida desde la agenda o desde "Tus calles" */
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest('[data-calle]');
+    if (!g) return;
+    resetFilters();
+    st.calle = g.getAttribute('data-calle');
+    painters.calle();
+    renderCasos();
+    show('casos');
+  });
+
+  $('#cases').addEventListener('click', function (e) {
+    var j = e.target.closest('[data-join]');
+    if (j) {
+      var c = CASOS[+j.getAttribute('data-join')];
+      st.caso = c;
+      $('#r-tipo').value = c.cat === 'ruido' ? 'Ruido sonoro' : (c.cat === 'imagen' ? 'Ruido visual' : 'Residuos');
+      $('#r-calle').value = c.corta;
+      $('#r-vec').value = 'Varios vecinos lo viven';
+      renderCasoBanner();
+      build();
+      show('reportar');
+      $('#r-desc').focus({ preventScroll: true });
+      return;
+    }
+    var f = e.target.closest('[data-follow]');
+    if (f) toggleFollow(f.getAttribute('data-follow'));
+  });
+
+  /* ---------- Onda de sonido ---------- */
+  function waveD(t) {
+    var d = '';
+    for (var x = 0; x <= 1000; x += 5) {
+      var k = Math.pow(1 - x / 1000, 1.7);
+      var y = 45 + k * 38 * (
+        Math.sin(x * 0.07 + t * 2.2) * 0.55 +
+        Math.sin(x * 0.19 - t * 3.1) * 0.32 +
+        Math.sin(x * 0.43 + t * 4.3) * 0.22);
+      d += (x ? 'L' : 'M') + x + ' ' + y.toFixed(1);
+    }
+    return d;
+  }
+  var wp = $('#wavePath');
+  wp.setAttribute('d', waveD(0));
+  var w2 = $('#wave2');
+  if (w2) w2.setAttribute('d', waveD(1.3));
+  if (!reduce) {
+    var t0 = performance.now();
+    (function loop(now) {
+      if (!$('#p-inicio').hidden) wp.setAttribute('d', waveD((now - t0) / 1000 * 0.7));
+      requestAnimationFrame(loop);
+    })(t0);
+  }
+
+  /* ---------- Presentacion del caso ---------- */
+  var slides = $$('.slide');
+  if (slides.length) {
+    var cur = 0;
+    slides.forEach(function (s, i) { s.setAttribute('aria-label', 'Lámina ' + (i + 1) + ' de ' + slides.length); });
+    var dots = $('#d-dots');
+    dots.innerHTML = slides.map(function (s, i) {
+      return '<button type="button" class="dot" data-i="' + i + '" aria-label="Ir a la lámina ' + (i + 1) + '"></button>';
+    }).join('');
+    var dotEls = $$('.dot', dots);
+    var phaseEls = $$('.phase');
+    function paintPhases() {
+      var f = slides[cur].getAttribute('data-fase');
+      var curF;
+      if (f) { curF = +f; }
+      else {
+        var last = 0;
+        for (var k = cur; k >= 0; k--) {
+          var kf = slides[k].getAttribute('data-fase');
+          if (kf) { last = +kf; break; }
+        }
+        curF = last + 0.5;
+      }
+      phaseEls.forEach(function (b) {
+        var n = +b.getAttribute('data-fase');
+        if (n === curF) {
+          b.setAttribute('aria-current', 'true');
+          var pc = b.parentNode.parentNode;
+          if (pc && pc.scrollWidth > pc.clientWidth) {
+            pc.scrollLeft += b.getBoundingClientRect().left - pc.getBoundingClientRect().left - (pc.clientWidth - b.offsetWidth) / 2;
+          }
+        } else b.removeAttribute('aria-current');
+        b.classList.toggle('done', n < curF);
+      });
+    }
+    $('#phases').addEventListener('click', function (e) {
+      var b = e.target.closest('.phase');
+      if (!b) return;
+      for (var k = 0; k < slides.length; k++) {
+        if (slides[k].getAttribute('data-fase') === b.getAttribute('data-fase')) { go(k); break; }
+      }
+    });
+    var started = false;
+    function go(i) {
+      cur = Math.max(0, Math.min(slides.length - 1, i));
+      if (started && window.innerWidth < 760) {
+        var ph = $('#phases').getBoundingClientRect();
+        if (ph.top < 56) window.scrollTo(0, window.scrollY + ph.top - 64);
+      }
+      slides.forEach(function (s, k) {
+        var on = k === cur;
+        s.classList.toggle('on', on);
+        s.setAttribute('aria-hidden', on ? 'false' : 'true');
+        if (on) s.removeAttribute('inert'); else s.setAttribute('inert', '');
+      });
+      dotEls.forEach(function (d, k) {
+        if (k === cur) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current');
+      });
+      $('#d-count').textContent = (cur + 1) + ' / ' + slides.length;
+      $('#d-bar').style.width = ((cur + 1) / slides.length * 100) + '%';
+      paintPhases();
+      $('#d-prev').disabled = cur === 0;
+      $('#d-next').disabled = cur === slides.length - 1;
+    }
+    go(0);
+    started = true;
+    $('#d-prev').addEventListener('click', function () { go(cur - 1); });
+    $('#d-next').addEventListener('click', function () { go(cur + 1); });
+    dots.addEventListener('click', function (e) {
+      var d = e.target.closest('.dot');
+      if (d) go(+d.getAttribute('data-i'));
+    });
+    var sx = 0, sy = 0, sT = 0;
+    var stg = $('.stage');
+    stg.addEventListener('touchstart', function (e) { var t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY; sT = Date.now(); }, { passive: true });
+    stg.addEventListener('touchend', function (e) {
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Date.now() - sT < 700 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+    document.addEventListener('keydown', function (e) {
+      if ($('#p-presentacion').hidden) return;
+      if (e.target.closest('input, select, textarea, [role="tablist"]')) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); }
+    });
+    var full = $('#d-full'), deck = $('#deck');
+    if (!document.fullscreenEnabled || !deck.requestFullscreen) { full.hidden = true; }
+    else {
+      full.addEventListener('click', function () {
+        if (document.fullscreenElement) { document.exitFullscreen(); return; }
+        var p = deck.requestFullscreen();
+        if (p && p.catch) p.catch(function () { full.hidden = true; });
+      });
+      document.addEventListener('fullscreenchange', function () {
+        full.textContent = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa';
+      });
+    }
+  }
+
+  /* ---------- Reporte guiado ---------- */
+  var PATENTE = /\b(?:[A-Za-z]{4}-?\d{2}|[A-Za-z]{2}-?\d{4})\b/;
+  var TELEFONO = /(?:\+?56[\s-]?)?\b9[\s-]?\d{4}[\s-]?\d{4}\b/;
+
+  /* Recordatorio amable: avisa si el texto parece identificar a una persona */
+  function checkNudge() {
+    var t = $('#r-desc').value, n = $('#r-nudge'), m = '';
+    if (PATENTE.test(t)) m = 'Parece una patente. Quítala: el reporte describe hechos y no identifica a personas.';
+    else if (TELEFONO.test(t)) m = 'Parece un número de teléfono. Quítalo antes de compartir el mensaje.';
+    n.textContent = m;
+    n.hidden = !m;
+  }
+
+  /* ¿A quién avisar? segun el tipo de problema */
+  var lastTipo = '';
+  function renderRoute() {
+    var t = $('#r-tipo').value;
+    if (t === lastTipo) return;
+    lastTipo = t;
+    var veci = t === 'Residuos' ? 'Aviso de aseo y ornato a la municipalidad.'
+      : (t === 'Ruido sonoro' ? 'Aviso a la municipalidad. En esa app un reporte es un aviso, no una denuncia formal.'
+        : 'Aviso a la municipalidad sobre problemas del barrio.');
+    var items = [
+      ['Comisión del Ruido y tu grupo de WhatsApp', 'Pega este mensaje para sumarlo a un caso.'],
+      ['Municipalidad de Santiago · app VECI STGO', veci]
+    ];
+    if (t === 'Ruido sonoro' || t === 'Otro') items.push(['Carabineros · 133', 'Si hay una pelea, un riesgo o una emergencia, llama primero.']);
+    $('#route-list').innerHTML = items.map(function (i) {
+      return '<li><b>' + esc(i[0]) + '</b><span>' + esc(i[1]) + '</span></li>';
+    }).join('');
+  }
+
+  function renderCasoBanner() {
+    var bn = $('#r-caso');
+    if (st.caso) {
+      $('#r-caso-t').textContent = st.caso.titulo + ' · ' + st.caso.corta;
+      bn.hidden = false;
+    } else { bn.hidden = true; }
+  }
+  $('#r-caso-x').addEventListener('click', function () { st.caso = null; renderCasoBanner(); build(); });
+
+  function build() {
+    var tipo = $('#r-tipo').value;
+    var cuando = $('#r-cuando').value, cd = '(completar)';
+    if (cuando) {
+      var p = cuando.split('T'), dd = p[0].split('-');
+      cd = dd[2] + '-' + dd[1] + '-' + dd[0] + (p[1] ? ' ' + p[1] : '');
+    }
+    var ev = $$('input[name="ev"]:checked').map(function (i) { return i.value; });
+    var dur = $('#r-dur').value.trim(), frec = $('#r-frec').value;
+    var msg = [
+      '*Reporte Vive Lastarria*',
+      st.caso ? 'Caso: ' + st.caso.titulo + ' (' + st.caso.corta + ')' : null,
+      'Tipo: ' + tipo,
+      'Dónde: ' + ($('#r-calle').value.trim() || '(completar)'),
+      'Cuándo: ' + cd,
+      dur ? 'Duración aproximada: ' + dur + ' min' : null,
+      frec !== 'Sin indicar' ? 'Frecuencia: ' + frec : null,
+      'Qué pasa: ' + ($('#r-desc').value.trim() || '(completar)'),
+      'Evidencia: ' + (ev.length ? ev.join(', ') : 'sin evidencia por ahora'),
+      'Vecinos afectados: ' + $('#r-vec').value,
+      '(Describo hechos, sin nombres ni rostros.)'
+    ].filter(Boolean).join('\n');
+    $('#preview').value = msg;
+    $('#wa').setAttribute('href', 'https://wa.me/?text=' + encodeURIComponent(msg));
+    $('#timer').hidden = tipo !== 'Ruido sonoro';
+    renderRoute();
+    checkNudge();
+  }
+  $('#form').addEventListener('input', build);
+  $('#form').addEventListener('change', build);
+  $('#form').addEventListener('submit', function (e) { e.preventDefault(); });
+
+  /* Registro de episodio: cronometra cuanto dura el ruido */
+  var TKEY = 'vl-episodio', tStart = null, tTick = null;
+  function fmtClock(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    return pad2(h) + ':' + pad2(m) + ':' + pad2(s % 60);
+  }
+  function tRun(ts) {
+    tStart = ts;
+    $('#t-out').textContent = fmtClock(Date.now() - tStart);
+    clearInterval(tTick);
+    tTick = setInterval(function () { $('#t-out').textContent = fmtClock(Date.now() - tStart); }, 1000);
+    $('#t-start').disabled = true;
+    $('#t-stop').disabled = false;
+  }
+  $('#t-start').addEventListener('click', function () {
+    var now = Date.now();
+    lsSet(TKEY, String(now));
+    $('#t-status').textContent = 'Registro en curso. Puedes cerrar esta pestaña y volver.';
+    tRun(now);
+  });
+  $('#t-stop').addEventListener('click', function () {
+    var ms = Date.now() - tStart, d = new Date(tStart);
+    clearInterval(tTick);
+    $('#t-out').textContent = fmtClock(ms);
+    $('#r-cuando').value = isoOf(d) + 'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    $('#r-dur').value = Math.max(1, Math.round(ms / 60000));
+    lsSet(TKEY, null);
+    tStart = null;
+    $('#t-start').disabled = false;
+    $('#t-stop').disabled = true;
+    $('#t-status').textContent = 'Listo: se completaron la fecha, la hora y la duración del reporte.';
+    build();
+  });
+  var savedT = parseInt(lsGet(TKEY), 10);
+  if (savedT && savedT < Date.now()) {
+    $('#t-status').textContent = 'Registro en curso desde antes. Ya lleva este tiempo.';
+    tRun(savedT);
+  }
+
+  build();
+
+  function copyFrom(box, out, ok) {
+    function manual() {
+      box.focus(); box.select();
+      out.textContent = 'No se pudo copiar solo. El texto quedó seleccionado: usa Ctrl+C o mantén presionado para copiar.';
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(box.value).then(function () { out.textContent = ok; }, manual);
+    } else { manual(); }
+  }
+  $('#copy').addEventListener('click', function () {
+    copyFrom($('#preview'), $('#status'), 'Mensaje copiado. Pégalo en WhatsApp.');
+  });
+  $('#copy-sum').addEventListener('click', function () {
+    copyFrom($('#summary'), $('#sum-status'), 'Resumen copiado. Pégalo en tu grupo.');
+  });
+
+  /* ---------- Vista inicial segun el enlace ---------- */
+  foldAuto();
+  show(hashView(), { noHash: true });
+})();
+</script>
+<script>
+/* QR dinamico: codifica la direccion donde se aloja la pagina. Libreria qrcode-generator (MIT, Kazuhiko Arase). */
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});
+</script>
+<script>
+(function () {
+  var box = document.getElementById('qr-live'), out = document.getElementById('qr-url');
+  if (!box || typeof qrcode !== 'function') return;
+  var url = location.href.split('#')[0];
+  try {
+    var q = qrcode(0, 'M'); q.addData(url); q.make();
+    box.innerHTML = q.createSvgTag({ cellSize: 1, margin: 2, scalable: true });
+    var sv = box.firstChild;
+    sv.setAttribute('class', 'qr'); sv.setAttribute('shape-rendering', 'crispEdges'); sv.setAttribute('aria-hidden', 'true');
+    out.textContent = /^https?:/.test(url) ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : 'El QR se activa al publicar la página';
+  } catch (e) { box.hidden = true; }
+})();
+</script>
+</body>
+</html>
